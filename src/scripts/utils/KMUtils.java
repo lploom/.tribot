@@ -381,39 +381,6 @@ public class KMUtils {
    public boolean isAutoRetaliateIsEnabled() {
       return Game.getSetting(172) == 0;
    }
-   
-   public void toggleAutoRetaliate() {
-      int[] settingsArray = Game.getSettingsArray();
-      if(settingsArray != null && settingsArray.length >= 172) {
-         if(!GameTab.getOpen().equals(TABS.COMBAT)) {
-            GameTab.open(TABS.COMBAT);
-         }
-         Mouse.clickBox(604, 359, 716, 401, 1);
-         General.sleep(300, 600);
-      }
-   }
-
-   public void setAutoRetaliate(boolean option) {
-      TABS tab = GameTab.getOpen();
-      int[] settingsArray = Game.getSettingsArray();
-      if (settingsArray != null) {
-         if (settingsArray.length >= 172) {
-            // auto retaliate is 0 for enabled, 1 for disabled (wut?)
-            if ((settingsArray[172] == 1) == option) {
-               if (!GameTab.getOpen().equals(TABS.COMBAT)) {
-                  GameTab.open(TABS.COMBAT);
-               }
-               Mouse.clickBox(604, 359, 716, 401, 1);
-               commonUtils.sleep(500, 1000);
-               GameTab.open(tab);
-               commonUtils.sleep(100, 200);
-               Mouse.move(General.random(-1000, 1000),General.random(-1000, 1000));
-            }
-            else {
-            }
-         }
-      }
-   }
 
    public void moveMouseRandom(int min, int max) {
       int prevSpeed = Mouse.getSpeed();

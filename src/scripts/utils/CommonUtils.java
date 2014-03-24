@@ -26,6 +26,22 @@ public class CommonUtils {
       cam = cameraUtils;
    }
    
+   // -- temp methods
+   public boolean isAutoRetaliateIsEnabled() {
+      return Game.getSetting(172) == 0;
+   }
+   public void toggleAutoRetaliate() {
+      int[] settingsArray = Game.getSettingsArray();
+      if(settingsArray != null && settingsArray.length >= 172) {
+         if(!GameTab.getOpen().equals(TABS.COMBAT)) {
+            GameTab.open(TABS.COMBAT);
+         }
+         Mouse.clickBox(604, 359, 716, 401, 1);
+         sleep(300, 600);
+      }
+   }
+   // -- end temp methods
+   
    public boolean clickModel(RSModel model, String upText) {
       if(model == null) return false;
       
