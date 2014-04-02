@@ -44,6 +44,7 @@ import org.tribot.script.interfaces.Painting;
 import org.tribot.script.interfaces.RandomEvents;
 
 import scripts.utils.CameraUtils;
+import scripts.utils.CameraUtils.CARDINAL;
 import scripts.utils.CommonUtils;
 import scripts.utils.KMUtils;
 import scripts.utils.StaticUtils;
@@ -122,7 +123,6 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, End
   private final static int COINS_ID = 995;
   private final static int TRAPDOOR_ID = 14880;
   private final static int CELLAR_CHEST_ID = 12308;
-  private final static int AK_BANK_BOOTH_ID = 2196;
   private final static int AK_GATE_ID = 2882;
   private final static int AK_GATE_ID2 = 2883;
 
@@ -697,13 +697,9 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, End
             }
           }
         } else if (bankLocation == 2) {
-          RSObject[] bank = Objects.findNearest(20, AK_BANK_BOOTH_ID);
-          if (bank != null && bank.length > 0) {
-            cameraUtils.pitchCameraAsync(General.random(45, 110));
-            Camera.turnToTile(bank[0].getPosition());
-            if (commonUtils.clickModel(bank[0].getModel(), "Bank Bank booth")) {
-              sleep(1246, 1542);
-            }
+          cameraUtils.turnCameraTo(CARDINAL.WEST);
+          if(Banking.openBank()) {
+            
           }
         }
       }
