@@ -14,6 +14,7 @@ import org.tribot.api2007.Player;
 import org.tribot.api2007.Screen;
 import org.tribot.api2007.Walking;
 import org.tribot.api2007.GameTab.TABS;
+import org.tribot.api2007.types.RSGroundItem;
 import org.tribot.api2007.types.RSItem;
 import org.tribot.api2007.types.RSModel;
 import org.tribot.api2007.types.RSTile;
@@ -195,4 +196,12 @@ public class CommonUtils {
 
       return 0;
    }
+
+  public int getItemId(RSGroundItem item) {
+    if(item != null)
+      return item.getID();
+
+   return 0;
+    
+  }
 }
