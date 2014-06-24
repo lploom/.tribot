@@ -442,14 +442,18 @@ public class KMUtils {
    }
 
    public boolean teleportHome() {
-      if (GameTab.getOpen() != TABS.MAGIC)
+      TABS prevTab = GameTab.getOpen();
+      if (prevTab != TABS.MAGIC) {
          GameTab.open(TABS.MAGIC);
+      }
       commonUtils.sleep(500, 600);
       RSInterface homeTeleport = Interfaces.get(192, 0);
       commonUtils.sleep(1000, 1750);
       if (homeTeleport != null) {
          if (homeTeleport.click("Cast")) {
-            commonUtils.sleep(13000, 16000);
+            commonUtils.sleep(1000, 2000);
+            GameTab.open(prevTab);
+            commonUtils.sleep(14000, 16000);
             return true;
          }
       }
