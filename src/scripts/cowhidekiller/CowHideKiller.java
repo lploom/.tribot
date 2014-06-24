@@ -204,15 +204,15 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, End
     }
   }
   private void randomizePaths() {
-    pathToCows = Walking.randomizePath(pathToCows, 1, 1);
-    pathToStairs = Walking.randomizePath(pathToStairs, 1, 1);
-    pathToAkBank = Walking.randomizePath(pathToAkBank, 1, 1);
-    pathToAkGate = Walking.randomizePath(pathToAkGate, 1, 1);
+//    pathToCows = Walking.randomizePath(pathToCows, 1, 1);
+//    pathToStairs = Walking.randomizePath(pathToStairs, 1, 1);
+//    pathToAkBank = Walking.randomizePath(pathToAkBank, 1, 1);
+//    pathToAkGate = Walking.randomizePath(pathToAkGate, 1, 1);
     randomizeTiles();
   }
   private void randomizeTiles() {
-    gateTileOutside = commonUtils.randomizeTile(gateTileOutside, 2, 2);
-    gateTileInside = commonUtils.randomizeTile(gateTileInside, 2, 2);
+    gateTileOutside = commonUtils.randomizeTile(gateTileOutside, 1, 1);
+    gateTileInside = commonUtils.randomizeTile(gateTileInside, 1, 1);
   }
   private void killingCows() {
     closeSkillInterfaceIfOpen();
