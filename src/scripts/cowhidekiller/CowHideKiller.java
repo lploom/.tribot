@@ -3,6 +3,7 @@ package scripts.cowhidekiller;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.lang.reflect.InvocationTargetException;
+import java.util.List;
 
 import javax.swing.SwingUtilities;
 
@@ -23,6 +24,7 @@ import org.tribot.api2007.Interfaces;
 import org.tribot.api2007.Inventory;
 import org.tribot.api2007.NPCs;
 import org.tribot.api2007.Objects;
+import org.tribot.api2007.Options;
 import org.tribot.api2007.Player;
 import org.tribot.api2007.Skills;
 import org.tribot.api2007.Skills.SKILLS;
@@ -41,6 +43,7 @@ import org.tribot.script.Script;
 import org.tribot.script.ScriptManifest;
 import org.tribot.script.interfaces.Breaking;
 import org.tribot.script.interfaces.Ending;
+import org.tribot.script.interfaces.MessageListening07;
 import org.tribot.script.interfaces.Painting;
 import org.tribot.script.interfaces.RandomEvents;
 import org.tribot.script.interfaces.Starting;
@@ -48,14 +51,17 @@ import org.tribot.script.interfaces.Starting;
 import scripts.utils.CameraUtils;
 import scripts.utils.CameraUtils.CARDINAL;
 import scripts.utils.CommonUtils;
+import scripts.utils.FixedSizedList;
 import scripts.utils.KMUtils;
 import scripts.utils.StaticUtils;
 import scripts.utils.WorldHopper;
 
 @ScriptManifest(authors = "karlrais", category = "Combat_local", name = "CowHideKiller", description = "The script will kill cows at the Lumbridge cow area. "
-    + "You can choose to loot cowhides or just kill cows. " + "You can choose to bank in the Lumbridge top floor, Lumbridge cellar or Al-Kharid. "
+    + "You can choose to loot cowhides or just kill cows. "
+    + "You can choose to bank in the Lumbridge top floor, Lumbridge cellar or Al-Kharid. "
     + "It runs away from Evil Chicken and Swarm. It death-walks and re-equips your items upon death. It also resets your combat stance so you do not gain defence XP.")
-public class CowHideKiller extends Script implements Painting, RandomEvents, Ending, Breaking, Starting {
+public class CowHideKiller extends Script implements Painting, RandomEvents, MessageListening07, Ending, Breaking,
+    Starting {
 
   private final long startTime = System.currentTimeMillis();
   private long runTime;
@@ -86,21 +92,33 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, End
   private final static RSTile GATE_CLOSED_TILE = new RSTile(3253, 3266);
   private final static RSTile GATE_CLOSED_TILE2 = new RSTile(3253, 3267);
 
-  private RSTile[] pathToCows = { new RSTile(3213, 3214), new RSTile(3216, 3218), new RSTile(3222, 3218), new RSTile(3235, 3220), new RSTile(3245, 3225), new RSTile(3254, 3225),
-      new RSTile(3259, 3232), new RSTile(3259, 3239), new RSTile(3255, 3246), new RSTile(3251, 3252), new RSTile(3250, 3258), new RSTile(3250, 3266), };
-  private RSTile[] pathToStairs = { new RSTile(3250, 3265), new RSTile(3251, 3254), new RSTile(3260, 3245), new RSTile(3260, 3238), new RSTile(3260, 3231), new RSTile(3254, 3226),
-      new RSTile(3245, 3226), new RSTile(3236, 3226), new RSTile(3234, 3218), new RSTile(3222, 3219), new RSTile(3216, 3219), new RSTile(3208, 3212) };
-  private RSTile[] pathToAkGate = { new RSTile(3268, 3227), new RSTile(3250, 3265), new RSTile(3251, 3254), new RSTile(3260, 3245), new RSTile(3260, 3238), new RSTile(3260, 3231),
-      new RSTile(3266, 3227) };
-  private RSTile[] pathToAkBank = { new RSTile(3268, 3227), new RSTile(3271, 3219), new RSTile(3272, 3213), new RSTile(3274, 3208), new RSTile(3277, 3201), new RSTile(3280, 3196),
-      new RSTile(3282, 3191), new RSTile(3282, 3185), new RSTile(3278, 3180), new RSTile(3277, 3176), new RSTile(3276, 3170), new RSTile(3269, 3168) };
+  private RSTile[] pathToCows = { new RSTile(3213, 3214), new RSTile(3216, 3218), new RSTile(3222, 3218),
+                                 new RSTile(3235, 3220), new RSTile(3245, 3225), new RSTile(3254, 3225),
+                                 new RSTile(3259, 3232), new RSTile(3259, 3239), new RSTile(3255, 3246),
+                                 new RSTile(3251, 3252), new RSTile(3250, 3258), new RSTile(3250, 3266), };
+  private RSTile[] pathToStairs = { new RSTile(3250, 3265), new RSTile(3251, 3254), new RSTile(3260, 3245),
+                                   new RSTile(3260, 3238), new RSTile(3260, 3231), new RSTile(3254, 3226),
+                                   new RSTile(3245, 3226), new RSTile(3236, 3226), new RSTile(3234, 3218),
+                                   new RSTile(3222, 3219), new RSTile(3216, 3219), new RSTile(3208, 3212) };
+  private RSTile[] pathToAkGate = { new RSTile(3268, 3227), new RSTile(3250, 3265), new RSTile(3251, 3254),
+                                   new RSTile(3260, 3245), new RSTile(3260, 3238), new RSTile(3260, 3231),
+                                   new RSTile(3266, 3227) };
+  private RSTile[] pathToAkBank = { new RSTile(3268, 3227), new RSTile(3271, 3219), new RSTile(3272, 3213),
+                                   new RSTile(3274, 3208), new RSTile(3277, 3201), new RSTile(3280, 3196),
+                                   new RSTile(3282, 3191), new RSTile(3282, 3185), new RSTile(3278, 3180),
+                                   new RSTile(3277, 3176), new RSTile(3276, 3170), new RSTile(3269, 3168) };
   private RSTile gateTileOutside = new RSTile(3249, 3263);
   private RSTile gateTileInside = new RSTile(3254, 3267);
 
-  private final static RSArea COW_PIT = new RSArea(new RSTile[] { new RSTile(3252, 3273, 0), new RSTile(3240, 3285, 0), new RSTile(3240, 3300, 0), new RSTile(3266, 3300, 0),
-      new RSTile(3266, 3255, 0), new RSTile(3253, 3255, 0) });
-  private final static RSArea BANKAREA_TOP = new RSArea(new RSTile[] { new RSTile(3207, 3221, 2), new RSTile(3211, 3221, 2), new RSTile(3210, 3216, 2), new RSTile(3208, 3216, 2) });
-  private final static RSArea BANKAREA_AK = new RSArea(new RSTile[] { new RSTile(3268, 3174), new RSTile(3273, 3174), new RSTile(3273, 3161), new RSTile(3268, 3161) });
+  private final static RSArea COW_PIT =
+      new RSArea(new RSTile[] { new RSTile(3252, 3273, 0), new RSTile(3240, 3285, 0), new RSTile(3240, 3300, 0),
+                               new RSTile(3266, 3300, 0), new RSTile(3266, 3255, 0), new RSTile(3253, 3255, 0) });
+  private final static RSArea BANKAREA_TOP = new RSArea(new RSTile[] { new RSTile(3207, 3221, 2),
+                                                                      new RSTile(3211, 3221, 2),
+                                                                      new RSTile(3210, 3216, 2),
+                                                                      new RSTile(3208, 3216, 2) });
+  private final static RSArea BANKAREA_AK = new RSArea(new RSTile[] { new RSTile(3268, 3174), new RSTile(3273, 3174),
+                                                                     new RSTile(3273, 3161), new RSTile(3268, 3161) });
 
   private final static int[] JUNK = { 526, 2132, 1971, 1917, 1969 };
   private final static int COW_DEATH_ANIMATION_ID = 5851;
@@ -111,13 +129,13 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, End
   private final static int AK_GATE_ID = 2882;
   private final static int AK_GATE_ID2 = 2883;
 
-  private CameraUtils cameraUtils = new CameraUtils();
-  private CommonUtils commonUtils = new CommonUtils(cameraUtils);
-  private KMUtils utils = new KMUtils(cameraUtils, commonUtils);
+  private CameraUtils camera = new CameraUtils();
+  private CommonUtils commons = new CommonUtils(camera);
+  private KMUtils utils = new KMUtils(camera, commons);
   private State state;
 
   private int[] gear = new int[11];
-  private int selectedCombatStyleIndex = -1;
+  private int combatStyleIndexOnStart = -1;
   private int startingWorld;
   private int plane = -1;
   private int distToStairs = -1;
@@ -130,34 +148,36 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, End
   private boolean isRunning = true;
   private boolean getLoot = false;
   private boolean donePrinceAliQuest;
+  private boolean killingTarget = false;
 
-  ABCUtil abc;
+  private ABCUtil abc = new ABCUtil();
   private CowHideKillerGui gui;
   private RSTile stairsTile = GROUND_FLOOR_TILE;
+  private List<RSCharacter> blackList = new FixedSizedList<RSCharacter>(3);
 
   @Override
   public void run() {
-    while(isRunning) {
+    while (isRunning) {
       state = getState();
-      switch(state) {
-        case BANKING:
-          banking(bankLocation);
-          break;
-        case KILLING_COWS:
-          killingCows();
-          break;
-        case TRAVELLING_TO_BANK:
-          travellingToBank();
-          break;
-        case TRAVELLING_TO_COWS:
-          travellingToCows();
-          break;
-        case HOPPING_WORLDS:
-          hopWorlds();
-          break;
-        case SHITHOLE:
-          utils.teleportHome();
-          break;
+      switch (state) {
+      case BANKING:
+        banking(bankLocation);
+        break;
+      case KILLING_COWS:
+        killingCows();
+        break;
+      case TRAVELLING_TO_BANK:
+        travellingToBank();
+        break;
+      case TRAVELLING_TO_COWS:
+        travellingToCows();
+        break;
+      case HOPPING_WORLDS:
+        hopWorlds();
+        break;
+      case SHITHOLE:
+        utils.teleportHome();
+        break;
       }
       sleep(100, 200);
     }
@@ -165,157 +185,131 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, End
 
   private void travellingToCows() {
     updateStairVariables();
-    randomizePaths();
-    performABC();
     Walking.setWalkingTimeout(7500L);
-    if(Inventory.getCount(gear) > 0) {
+    if (Inventory.getCount(gear) > 0) {
       afterLife();
     } else {
       moveToCows();
     }
   }
-  private void performABC() {
-    abc.performRotateCamera();
-    abc.performRandomRightClick();
-    abc.performPickupMouse();
-    abc.performRandomMouseMovement();
-    if(state == State.KILLING_COWS) {
-      abc.performLeaveGame();
-      abc.performExamineObject();
-      abcCheckXP();
-    }
-  }
-  private void abcCheckXP() {
-    TABS prevTab = GameTab.getOpen();
-    abc.performXPCheck(getStatToTrack());
-    if(GameTab.getOpen() != prevTab) {
-      GameTab.open(prevTab);
-    }
-  }
+
   private void travellingToBank() {
     updateStairVariables();
-    randomizePaths();
-    performABC();
     Walking.setWalkingTimeout(9000L);
-    if(Inventory.getCount(gear) > 0) {
+    if (Inventory.getCount(gear) > 0) {
       afterLife();
     } else {
       travelToBank(bankLocation);
     }
   }
-  private void randomizePaths() {
-//    pathToCows = Walking.randomizePath(pathToCows, 1, 1);
-//    pathToStairs = Walking.randomizePath(pathToStairs, 1, 1);
-//    pathToAkBank = Walking.randomizePath(pathToAkBank, 1, 1);
-//    pathToAkGate = Walking.randomizePath(pathToAkGate, 1, 1);
-    randomizeTiles();
-  }
-  private void randomizeTiles() {
-    gateTileOutside = commonUtils.randomizeTile(gateTileOutside, 1, 1);
-    gateTileInside = commonUtils.randomizeTile(gateTileInside, 1, 1);
-  }
+
   private void killingCows() {
     closeSkillInterfaceIfOpen();
-    if(!isOriginalCombatStance()) {
+    if (!isOriginalCombatStance()) {
       switchToOriginalStance();
     } else {
       killCows();
     }
   }
+
   private void switchToOriginalStance() {
     TABS open = GameTab.getOpen();
-    if(Combat.selectIndex(selectedCombatStyleIndex))
+    if (Combat.selectIndex(combatStyleIndexOnStart)) {
       GameTab.open(open);
+    }
   }
+
   private void hopWorlds() {
     boolean wasInCombat = false;
-    while(Player.getRSPlayer().isInCombat()) {
-      if(!commonUtils.isAutoRetaliateIsEnabled()) {
-        commonUtils.toggleAutoRetaliate();
+    while (Player.getRSPlayer().isInCombat()) {
+      if (!commons.isAutoRetaliateIsEnabled()) {
+        commons.toggleAutoRetaliate();
       }
       wasInCombat = true;
       sleep(100, 200);
     }
-    if(wasInCombat) {
+    if (wasInCombat) {
       sleep(7000, 8000);
     }
     super.setLoginBotState(false);
     WorldHopper.hop(startingWorld - 300);
     super.setLoginBotState(true);
   }
+
   private void closeSkillInterfaceIfOpen() {
-    if(Interfaces.get(499) != null) {
+    if (Interfaces.get(499) != null) {
       RSInterfaceChild closeButton = Interfaces.get(499, 24);
-      if(closeButton != null) {
+      if (closeButton != null) {
         closeButton.click();
       }
     }
   }
+
   private void afterLife() {
     println("You PROBABLY just died. Trying to re-equip items.");
     sleep(1500, 2500);
-    if(bankLocation == 2) {
+    if (bankLocation == 2) {
       println("Changed bank location to Lumbridge top floor!");
       bankLocation = 0;
     }
 
-    if(!GameTab.getOpen().equals(TABS.INVENTORY)) {
+    if (!GameTab.getOpen().equals(TABS.INVENTORY)) {
       GameTab.open(TABS.INVENTORY);
       sleep(500, 750);
     }
 
     long k = System.currentTimeMillis();
-    while(Inventory.getCount(gear) > 0) {
-      if(Timing.timeFromMark(k) > 15000)
+    while (Inventory.getCount(gear) > 0) {
+      if (Timing.timeFromMark(k) > 15000) {
         break;
-
+      }
       String uptext = Game.getUptext();
-      if(uptext != null && uptext.contains("->"))
-        commonUtils.clickChatBox();
-
+      if (uptext != null && uptext.contains("->")) {
+        commons.clickChatBox();
+      }
       RSItem[] items = Inventory.find(gear);
-      for(RSItem item : items) {
-        if(item.click("Wield", "Wear"))
+      for (RSItem item : items) {
+        if (item.click("Wield", "Wear")) {
           sleep(1500, 2500);
+        }
       }
       sleep(100, 200);
     }
-    k = System.currentTimeMillis();
-    while(isOriginalCombatStance()) {
-      if(Timing.timeFromMark(k) > 15000)
-        break;
-      Combat.selectIndex(selectedCombatStyleIndex);
-      sleep(1500, 2500);
-    }
-    k = System.currentTimeMillis();
 
-    while(!utils.isAutoRetaliateIsEnabled()) {
-      if(Timing.timeFromMark(k) > 15000)
+    Combat.selectIndex(combatStyleIndexOnStart);
+
+    k = System.currentTimeMillis();
+    while (!Combat.isAutoRetaliateOn()) {
+      if (Timing.timeFromMark(k) > 15000) {
         break;
-      commonUtils.toggleAutoRetaliate();
+      }
+      Combat.setAutoRetaliate(true);
       sleep(2000, 2500);
     }
 
-    if(!GameTab.getOpen().equals(TABS.INVENTORY)) {
+    if (!GameTab.getOpen().equals(TABS.INVENTORY)) {
       GameTab.open(TABS.INVENTORY);
       sleep(1500, 2500);
     }
   }
+
   private void banking(int bankLocation) {
-    if(bankLocation == 0) {
-      if(!inLumbyBank()) {
+    if (bankLocation == 0) {
+      if (!inLumbyBank()) {
         moveToBanktile();
       } else {
         floorToToggleRun = General.random(0, 2);
         doBank(bankLocation);
       }
-    } else
+    } else {
       doBank(bankLocation);
+    }
   }
-  private void killCows() {
-    utils.dropJunk(JUNK);
 
-    if(!getLoot && Game.getRunEnergy() > General.random(10, 100)) {
+  private void killCows() {
+    Inventory.drop(JUNK);
+
+    if (!getLoot && Game.getRunEnergy() > General.random(10, 100)) {
       utils.toggleRun(true);
     }
 
@@ -323,114 +317,117 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, End
     RSNPC cow = findNearestTarget();
 
     // Loot or Kill?
-    if(loot == null && cow == null) {
+    if (loot == null && cow == null) {
       return;
-    } else if(loot == null) {
+    } else if (loot == null) {
       killTarget(cow, COW_DEATH_ANIMATION_ID, 0, getLoot);
-    } else if(getLoot && cow == null) {
-      if(utils.pickUpLoot(loot))
+    } else if (getLoot && cow == null) {
+      if (utils.pickUpLoot(loot)) {
         hidesGathered++;
-    } else if(getLoot && Player.getPosition().distanceTo(loot) <= Player.getPosition().distanceTo(cow.getPosition())) {
-      if(utils.pickUpLoot(loot))
+      }
+    } else if (getLoot && Player.getPosition().distanceTo(loot) <= Player.getPosition().distanceTo(cow.getPosition())) {
+      if (utils.pickUpLoot(loot)) {
         hidesGathered++;
-    } else if(cow != null) {
+      }
+    } else if (cow != null) {
       killTarget(cow, COW_DEATH_ANIMATION_ID, 0, getLoot);
     }
   }
+
   private void killTarget(RSNPC target, int deathAnimationID, int minHp, boolean getLoot) {
-    if(Player.getPosition().distanceTo(target) > 7) {
+    if (Player.getPosition().distanceTo(target) > 7) {
       Walking.walkTo(target);
-      commonUtils.sleep(150, 300);
-      cameraUtils.pitchCameraAsync(General.random(23, 50));
-      cameraUtils.rotateCameraToTileAsync(target.getPosition());
-      commonUtils.sleep(1000, 1500);
-    } else if(!target.isOnScreen()) {
-      cameraUtils.pitchCameraAsync(General.random(23, 60));
-      cameraUtils.rotateCameraToTileAsync(target.getPosition());
-      commonUtils.sleep(450, 600);
+      General.sleep(150, 300);
+      camera.pitchCameraAsync(General.random(23, 50));
+      camera.rotateCameraToTileAsync(target.getPosition());
+      General.sleep(750, 1250);
+    } else if (!target.isOnScreen()) {
+      camera.pitchCameraAsync(General.random(23, 60));
+      camera.rotateCameraToTileAsync(target.getPosition());
+      General.sleep(450, 600);
     } else {
-      if(commonUtils.clickModel(target.getModel(), "Attack")) {
-
+      killingTarget = true;
+      if (commons.clickModel(target.getModel(), "Attack")) {
         int antibanIndex = General.random(0, 4);
-        if(antibanIndex < 3) {
+        if (antibanIndex < 3) {
           Mouse.move(General.random(-1000, 1000), General.random(-1000, 1000));
-        } else if(antibanIndex == 3) {
-
+        } else if (antibanIndex == 3) {
+          // do nothing
         } else {
-          cameraUtils.rotateCameraAsync(General.random(0, 360));
+          camera.rotateCameraAsync(General.random(0, 360));
         }
 
         long timer = System.currentTimeMillis();
-        while(target.isValid()) {
-
-          if(Skills.getCurrentLevel(SKILLS.HITPOINTS) < minHp) {
+        while (target.isValid()) {
+          if (Skills.getCurrentLevel(SKILLS.HITPOINTS) < minHp) {
             break;
           }
-
-          if(!COW_PIT.contains(target)) {
+          if (!COW_PIT.contains(target)) {
             break;
           }
-
+          if (!killingTarget) { // server message received
+            if (!target.isInCombat() && !target.isInteractingWithMe()) {
+              blackList.add(target); // probably some dude attacking cow with weakening magic spells
+            }
+            break;
+          }
           // target just died or someone else attacked it
-          if(target.isInCombat() && Player.getRSPlayer().getInteractingCharacter() == null) {
-            // target didnt die
-            if(target.getHealth() > 0 || !getLoot) {
+          if (target.isInCombat() && Player.getRSPlayer().getInteractingCharacter() == null) {
+            if (target.getHealth() > 0 || !getLoot) { // target didnt die
               break;
             }
           }
 
           // In case of a misclick the bot will just finish off the
           // misclicked mob
-          if(Player.getRSPlayer().isInCombat()) {
+          if (Player.getRSPlayer().isInCombat()) {
             timer = System.currentTimeMillis();
-          }
-          // Target is still legit but character got stuck
-          else {
-            if(System.currentTimeMillis() - timer > General.random(2612, 2919)) {
-              if(!target.isOnScreen()) {
+          } else { // Target is still legit but character got stuck
+            if (System.currentTimeMillis() - timer > General.random(2612, 2919)) {
+              if (!target.isOnScreen()) {
                 Camera.turnToTile(target.getPosition());
               }
-              if(Player.getPosition().distanceTo(target) > 7) {
+              if (Player.getPosition().distanceTo(target) > 7) {
                 Walking.walkTo(target);
-                commonUtils.sleep(150, 300);
+                General.sleep(150, 300);
               }
-              if(!Player.isMoving() && target.getAnimation() != deathAnimationID) {
-                if(commonUtils.clickModel(target.getModel(), "Attack")) {
+              if (!Player.isMoving() && target.getAnimation() != deathAnimationID) {
+                if (commons.clickModel(target.getModel(), "Attack")) {
                   timer = System.currentTimeMillis();
                 }
               }
 
             }
           }
-          performABC();
-          commonUtils.sleep(151, 267);
+          abc.performTimedActions(getStatToTrack());
+          General.sleep(151, 267);
         }
-
       }
-
     }
+    killingTarget = false;
   }
+
   private void moveToCows() {
-    if(plane > 0) {
-      if(floorToToggleRun == 2 && plane == 2)
+    if (plane > 0) {
+      if (floorToToggleRun == 2 && plane == 2)
         utils.toggleRun(true);
-      else if(floorToToggleRun == 1 && plane == 1)
+      else if (floorToToggleRun == 1 && plane == 1)
         utils.toggleRun(true);
 
-      if(distToStairs >= 7)
+      if (distToStairs >= 7)
         walkToStairs(plane);
       else
         climbStairs(plane);
 
-    } else if(inCellar()) {
-      if(Player.getPosition().distanceTo(LADDER_TILE) < 7)
+    } else if (inCellar()) {
+      if (Player.getPosition().distanceTo(LADDER_TILE) < 7)
         climbLadder();
       else {
         Walking.walkTo(LADDER_TILE);
         sleep(2500, 3500);
       }
-    } else if(plane == 0) {
-      if(floorToToggleRun == 0) {
+    } else if (plane == 0) {
+      if (floorToToggleRun == 0) {
         utils.toggleRun(true);
       }
       travelToCows();
@@ -438,148 +435,151 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, End
       println("Error! Plane returned < 0; Please report this!");
     }
   }
+
   private void climbLadder() {
     RSObject[] ladder = Objects.getAt(LADDER_TILE);
-    if(ladder != null && ladder.length > 0) {
-      if(!ladder[0].isOnScreen()) {
-        cameraUtils.pitchCameraAsync(General.random(45, 100));
+    if (ladder != null && ladder.length > 0) {
+      if (!ladder[0].isOnScreen()) {
+        camera.pitchCameraAsync(General.random(45, 100));
         Camera.turnToTile(ladder[0].getPosition());
       }
-      if(commonUtils.clickModel(ladder[0].getModel(), "Climb-up")) {
-        commonUtils.waitUntilIdle(1000, 1500);
+      if (commons.clickModel(ladder[0].getModel(), "Climb-up")) {
+        commons.waitUntilIdle(1000, 1500);
       }
     }
 
   }
+
   private void travelToBank(int bankLocation) {
-    if(plane == 0) {
-      if(atCows()) {
-        if(!atGate()) {
-          if(!Player.isMoving())
+    if (plane == 0) {
+      if (atCows()) {
+        if (!atGate()) {
+          if (!Player.isMoving())
             moveToGate();
         } else {
-          if(!isGateOpen()) {
+          if (!isGateOpen()) {
             openGate();
           } else {
-            if(!Player.isMoving()) {
+            if (!Player.isMoving()) {
               Walking.walkTo(gateTileOutside);
               sleep(100, 200);
             }
           }
         }
-      } else if(bankLocation == 0) {
-        if(distToStairs <= 5) {
+      } else if (bankLocation == 0) {
+        if (distToStairs <= 5) {
           climbStairs(plane);
-        } else if(distToStairs < 15 && distToStairs >= 6) {
-          if(!Player.isMoving())
+        } else if (distToStairs < 15 && distToStairs >= 6) {
+          if (!Player.isMoving())
             Walking.walkTo(stairsTile);
         } else {
-          cameraUtils.setCameraMovement(true);
-          cameraUtils.rotateCameraAsync(Camera.getCameraRotation());
-          if(bankLocation == 0) {
-            if(Walking.walkPath(pathToStairs)) {
-              cameraUtils.setCameraMovement(false);
+          camera.setCameraMovement(true);
+          camera.rotateCameraAsync(Camera.getCameraRotation());
+          if (bankLocation == 0) {
+            if (Walking.walkPath(pathToStairs)) {
+              camera.setCameraMovement(false);
             }
-          } else if(bankLocation == 1) {
-            if(Walking.walkPath(pathToStairs)) {
-              cameraUtils.setCameraMovement(false);
+          } else if (bankLocation == 1) {
+            if (Walking.walkPath(pathToStairs)) {
+              camera.setCameraMovement(false);
             }
           }
         }
-      } else if(bankLocation == 1) {
-        if(getDistanceToTrapdoor() <= 6) {
+      } else if (bankLocation == 1) {
+        if (getDistanceToTrapdoor() <= 6) {
           climbTrapdoor();
-        } else if(getDistanceToTrapdoor() < 15 && getDistanceToTrapdoor() >= 7) {
-          if(!Player.isMoving()) {
+        } else if (getDistanceToTrapdoor() < 15 && getDistanceToTrapdoor() >= 7) {
+          if (!Player.isMoving()) {
             Walking.walkTo(TRAPDOOR_TILE);
           }
-        } else if(inCellar()) {
-          if(Player.getPosition().distanceTo(CELLAR_BANK_TILE) > 6) {
+        } else if (inCellar()) {
+          if (Player.getPosition().distanceTo(CELLAR_BANK_TILE) > 6) {
             Walking.walkTo(CELLAR_BANK_TILE);
             sleep(1500, 2500);
           }
         } else {
-          cameraUtils.setCameraMovement(true);
-          cameraUtils.rotateCameraAsync(Camera.getCameraRotation());
-          if(bankLocation == 0) {
-            if(Walking.walkPath(pathToStairs)) {
-              cameraUtils.setCameraMovement(false);
+          camera.setCameraMovement(true);
+          camera.rotateCameraAsync(Camera.getCameraRotation());
+          if (bankLocation == 0) {
+            if (Walking.walkPath(pathToStairs)) {
+              camera.setCameraMovement(false);
             }
-          } else if(bankLocation == 1) {
-            if(Walking.walkPath(pathToStairs)) {
-              cameraUtils.setCameraMovement(false);
+          } else if (bankLocation == 1) {
+            if (Walking.walkPath(pathToStairs)) {
+              camera.setCameraMovement(false);
             }
           }
         }
-      } else if(bankLocation == 2) {
-        if(!BANKAREA_AK.contains(Player.getPosition())) {
-          if(!inAlKharid()) {
-            if(!atAKGate()) {
-              commonUtils.sleepwalkPath(pathToAkGate);
+      } else if (bankLocation == 2) {
+        if (!BANKAREA_AK.contains(Player.getPosition())) {
+          if (!inAlKharid()) {
+            if (!atAKGate()) {
+              commons.sleepwalkPath(pathToAkGate);
             } else {
               passGate();
             }
           } else {
-            commonUtils.sleepwalkPath(pathToAkBank);
+            commons.sleepwalkPath(pathToAkBank);
           }
         }
       }
-    } else if(plane > 0) {
-      if(distToStairs >= 7)
+    } else if (plane > 0) {
+      if (distToStairs >= 7)
         walkToStairs(plane);
       else
         climbStairs(plane);
     }
 
   }
+
   private void runAway() {
-    utils.toggleRun(true);
-    sleep(200, 300);
-    Walking.walkTo(Player.getPosition());
+    Options.setRunOn(true);
     sleep(100, 300);
-    if(Player.getPosition().distanceTo(LOWER_AREA_TILE) <= Player.getPosition().distanceTo(UPPER_AREA_TILE)) {
-      if(Walking.walkPath(Walking.generateStraightPath(UPPER_AREA_TILE))) {
-        commonUtils.waitForDestination();
+    if (Player.getPosition().distanceTo(LOWER_AREA_TILE) <= Player.getPosition().distanceTo(UPPER_AREA_TILE)) {
+      if (commons.sleepwalkTo(UPPER_AREA_TILE)) {
+        commons.waitForDestination();
       }
     } else {
-      if(Walking.walkPath(Walking.generateStraightPath(LOWER_AREA_TILE))) {
-        commonUtils.waitForDestination();
+      if (commons.sleepwalkTo(LOWER_AREA_TILE)) {
+        commons.waitForDestination();
       }
     }
     sleep(750, 1000);
   }
+
   private void saveInitialEquipment() {
     RSItem[] equippedItems = Equipment.getItems();
-    for(int i = 0; i < equippedItems.length; i++) {
+    for (int i = 0; i < equippedItems.length; i++) {
       gear[i] = equippedItems[i].getID();
     }
 
   }
+
   private void calcPaint() {
     runTime = System.currentTimeMillis() - startTime;
     runTimeString = StaticUtils.getDurationBreakdown(runTime);
     expGained = getTotalCombatExp() - expStart;
     double d = runTime;
-    if(d > 0) {
+    if (d > 0) {
       expPerHour = (int) (expGained / (d / 1000 / 3600)) / 1000;
       hidesPerHour = (int) (hidesGathered / (d / 1000 / 3600));
     }
   }
+
   private void moveToGate() {
-    Walking.walkTo(Player.getPosition());
-    sleep(100, 200);
-    if(Walking.blindWalkTo(gateTileInside)) {
-      cameraUtils.rotateCameraToTileAsync(GATE_OPEN_TILE);
+    if (commons.sleepwalkTo(gateTileInside)) {
+      camera.rotateCameraToTileAsync(GATE_OPEN_TILE);
     }
   }
+
   private void moveToBanktile() {
-    if(!Player.isMoving()) {
-      if(Walking.walkTo(BANK_TILE)) {
-        cameraUtils.rotateCameraToTileAsync(BANK_TILE);
-        cameraUtils.pitchCameraAsync(General.random(22, 110));
-        for(int i = 0; i < 3; i++) {
+    if (!Player.isMoving()) {
+      if (Walking.walkTo(BANK_TILE)) {
+        camera.rotateCameraToTileAsync(BANK_TILE);
+        camera.pitchCameraAsync(General.random(22, 110));
+        for (int i = 0; i < 3; i++) {
           RSTile destination = Game.getDestination();
-          if(destination == null || BANKAREA_TOP.contains(destination)) {
+          if (destination == null || BANKAREA_TOP.contains(destination)) {
             break;
           }
           sleep(121, 251);
@@ -588,290 +588,315 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, End
       }
     }
   }
+
   private void doBank(int bankLocation) {
-    if(GameTab.getOpen() != TABS.INVENTORY) {
+    if (GameTab.getOpen() != TABS.INVENTORY) {
       GameTab.open(TABS.INVENTORY);
       sleep(100, 200);
     }
-    if(Inventory.getAll().length != 0 || (bankLocation == 2 && !donePrinceAliQuest && Inventory.getCount(COINS_ID) < 20)) {
-      if(Banking.isBankScreenOpen()) {
-        if(bankLocation == 2) {
+    if (Inventory.getAll().length != 0
+        || (bankLocation == 2 && !donePrinceAliQuest && Inventory.getCount(COINS_ID) < 20)) {
+      if (Banking.isBankScreenOpen()) {
+        if (bankLocation == 2) {
           Banking.depositAllExcept(995);
         } else {
           Banking.depositAll();
         }
         sleep(300, 500);
-        if(bankLocation == 2 && Inventory.getCount(COINS_ID) < 20 && !donePrinceAliQuest) {
+        if (bankLocation == 2 && Inventory.getCount(COINS_ID) < 20 && !donePrinceAliQuest) {
           Banking.withdraw(1000, COINS_ID);
           sleep(300, 500);
         }
         Banking.close();
         sleep(300, 500);
       } else {
-        if(bankLocation == 0) {
-          cameraUtils.pitchCameraAsync(General.random(45, 110));
-          cameraUtils.rotateCameraToTileAsync(new RSTile(BANK_TILE.getPosition().getX(), BANK_TILE.getPosition().getY() + 2));
-          if(utils.openBankBooth(utils.getLumbyBankBoothID())) {
-            sleep(1246, 1542);
+        if (bankLocation == 0) {
+          camera.pitchCameraAsync(General.random(45, 110));
+          camera.rotateCameraToTileAsync(new RSTile(BANK_TILE.getPosition().getX(), BANK_TILE.getPosition().getY() + 2));
+          if (Banking.openBank()) {
+            sleep(123, 321);
           }
-        } else if(bankLocation == 1) {
+        } else if (bankLocation == 1) {
           RSObject[] bankChest = Objects.findNearest(20, CELLAR_CHEST_ID);
-          if(bankChest != null && bankChest.length > 0) {
-            if(Player.getPosition().distanceTo(bankChest[0]) < 7) {
-              if(!bankChest[0].isOnScreen()) {
-                cameraUtils.pitchCameraAsync(General.random(45, 110));
+          if (bankChest != null && bankChest.length > 0) {
+            if (Player.getPosition().distanceTo(bankChest[0]) < 7) {
+              if (!bankChest[0].isOnScreen()) {
+                camera.pitchCameraAsync(General.random(45, 110));
                 Camera.turnToTile(bankChest[0].getPosition());
               } else {
-                if(commonUtils.clickModel(bankChest[0].getModel(), "Bank Chest")) {
+                if (commons.clickModel(bankChest[0].getModel(), "Bank Chest")) {
                   sleep(1246, 1542);
                 }
               }
             } else {
-              if(Walking.walkPath(Walking.generateStraightPath(bankChest[0]))) {
-                cameraUtils.pitchCameraAsync(General.random(45, 110));
+              if (Walking.walkPath(Walking.generateStraightPath(bankChest[0]))) {
+                camera.pitchCameraAsync(General.random(45, 110));
                 Camera.turnToTile(bankChest[0].getPosition());
-                commonUtils.waitUntilIdle(400, 800);
+                commons.waitUntilIdle(400, 800);
               }
             }
           }
-        } else if(bankLocation == 2) {
-          cameraUtils.turnCameraTo(CARDINAL.WEST);
-          if(Banking.openBank()) {
-
+        } else if (bankLocation == 2) {
+          camera.turnCameraTo(CARDINAL.WEST);
+          if (Banking.openBank()) {
+            sleep(123, 321);
           }
         }
       }
     }
   }
+
   private void travelToCows() {
-    if(!atGate()) {
-      cameraUtils.setCameraMovement(true);
-      cameraUtils.rotateCameraAsync(Camera.getCameraRotation());
+    if (!atGate()) {
+      camera.setCameraMovement(true);
+      camera.rotateCameraAsync(Camera.getCameraRotation());
       sleep(125, 150);
-      if(bankLocation == -1 || bankLocation == 0 || bankLocation == 1 || (bankLocation == 2 && !inAlKharid())) {
-        if(gateTileOutside.getY() + 3 > Player.getPosition().getY()) { // failsafe
-          // if
-          // north
-          // of
-          // the
-          // gate
-          if(Walking.walkPath(pathToCows)) {
-            cameraUtils.setCameraMovement(false);
-            commonUtils.waitUntilIdle(750, 1000);
+      if (bankLocation == -1 || bankLocation == 0 || bankLocation == 1 || (bankLocation == 2 && !inAlKharid())) {
+        // failsafe if north of the gate
+        if (gateTileOutside.getY() + 3 > Player.getPosition().getY()) {
+          if (Walking.walkPath(pathToCows)) {
+            camera.setCameraMovement(false);
+            commons.waitUntilIdle(750, 1000);
           }
         } else {
-          if(Walking.walkPath(Walking.generateStraightPath(gateTileOutside))) {
-            cameraUtils.setCameraMovement(false);
-            commonUtils.waitForDestination();
+          if (Walking.walkPath(Walking.generateStraightPath(gateTileOutside))) {
+            camera.setCameraMovement(false);
+            commons.waitForDestination();
           }
         }
-      } else if(bankLocation == 2 && inAlKharid()) {
-        if(!atAKGate()) {
+      } else if (bankLocation == 2 && inAlKharid()) {
+        if (!atAKGate()) {
           utils.walkPath(pathToAkBank, true);
         } else {
           passGate();
         }
-
       }
     } else {
-      if(!isGateOpen()) {
+      if (!isGateOpen()) {
         openGate();
       } else {
-        Walking.walkTo(new RSTile(3259 + General.random(-1, 3), 3271 + General.random(-3, +4), 0));
-        sleep(500, 750);
-      }
-    }
-  }
-  private void openGate() {
-    int random = General.random(0, 1);
-    RSTile gateTile;
-    if(random == 0)
-      gateTile = GATE_CLOSED_TILE;
-    else
-      gateTile = GATE_CLOSED_TILE2;
-
-    RSObject gate = Doors.getDoorAt(gateTile);
-    if(gate != null) {
-      if(!gate.isOnScreen()) {
-        cameraUtils.rotateCameraToTileAsync(gate.getPosition());
-        sleep(250, 450);
-      }
-      if(gate.click("Open gate")) {
-        commonUtils.waitUntilIdle(541, 751);
-      }
-    }
-  }
-  private void walkToStairs(int plane) {
-    sleepwalkTo(stairsTile);
-  }
-  private void sleepwalkTo(RSTile tile) {
-    RSTile dest = Game.getDestination();
-    if(dest != null) {
-      if(dest.distanceTo(tile) > 3) {
-        Walking.walkPath(Walking.generateStraightPath(tile));
-      }
-    } else {
-      if(Walking.walkPath(Walking.generateStraightPath(tile))) {
-        cameraUtils.rotateCameraToTileAsync(stairsTile);
-        cameraUtils.pitchCameraAsync(General.random(23, 110));
-      }
-    }
-
-  }
-  private void passGate() {
-    RSObject[] gate = Objects.findNearest(20, AK_GATE_ID, AK_GATE_ID2);
-    if(gate != null && gate.length > 0) {
-      if(!gate[0].isOnScreen()) {
-        cameraUtils.pitchCameraAsync(General.random(45, 75));
-        Camera.turnToTile(gate[0].getPosition());
-      } else {
-        if(commonUtils.rightClickOnModel(gate[0].getModel(), "Pay-toll(10gp)")) {
-          commonUtils.waitUntilIdle(1000, 1500);
+        if(Walking.walkTo(new RSTile(3259 + General.random(-1, 3), 3271 + General.random(-3, 4), 0))) {
+          sleep(50, 100);
         }
       }
     }
   }
+
+  private void openGate() {
+    RSTile gateTile = getRandomGateTile();
+    RSObject gate = Doors.getDoorAt(gateTile);
+    if (gate != null) {
+      if (!gate.isOnScreen()) {
+        camera.rotateCameraToTileAsync(gate.getPosition());
+        sleep(250, 450);
+      }
+      if (gate.click("Open gate")) {
+        commons.waitUntilIdle(541, 751);
+      }
+    }
+  }
+
+  private RSTile getRandomGateTile() {
+    int random = General.random(0, 1);
+    RSTile gateTile;
+    if (random == 0) {
+      gateTile = GATE_CLOSED_TILE;
+    }
+    else {
+      gateTile = GATE_CLOSED_TILE2;
+    }
+    return gateTile;
+  }
+
+  private void walkToStairs(int plane) {
+    sleepwalkTo(stairsTile);
+  }
+
+  private void sleepwalkTo(RSTile tile) {
+    RSTile dest = Game.getDestination();
+    if (dest != null) {
+      if (dest.distanceTo(tile) > 3) {
+        Walking.walkPath(Walking.generateStraightPath(tile));
+      }
+    } else {
+      if (Walking.walkPath(Walking.generateStraightPath(tile))) {
+        camera.rotateCameraToTileAsync(stairsTile);
+        camera.pitchCameraAsync(General.random(23, 110));
+      }
+    }
+
+  }
+
+  private void passGate() {
+    RSObject[] gate = Objects.findNearest(20, AK_GATE_ID, AK_GATE_ID2);
+    if (gate != null && gate.length > 0) {
+      if (!gate[0].isOnScreen()) {
+        camera.pitchCameraAsync(General.random(45, 75));
+        Camera.turnToTile(gate[0].getPosition());
+      } else {
+        if (commons.rightClickOnModel(gate[0].getModel(), "Pay-toll(10gp)")) {
+          commons.waitUntilIdle(1000, 1500);
+        }
+      }
+    }
+  }
+
   private void climbStairs(int plane) {
     String uptext = "";
     RSTile stairTile;
 
-    switch(plane) {
-      case 0:
-        uptext = "Climb-up";
-        cameraUtils.pitchCameraAsync(General.random(22, 45));
-        stairTile = STAIRS_TILE_0;
-        Camera.turnToTile(stairTile);
-        break;
-      case 1:
-        stairTile = STAIRS_TILE_1;
-        if(state == State.TRAVELLING_TO_COWS) {
-          uptext = "Climb-down";
-        } else if(state == State.TRAVELLING_TO_BANK) {
-          uptext = "Climb-up";
-        }
-        break;
-      case 2:
-        stairTile = STAIRS_TILE_2;
-        if(Camera.getCameraAngle() < 65) {
-          cameraUtils.pitchCameraAsync(General.random(65, 110));
-          sleep(212, 312);
-        }
+    switch (plane) {
+    case 0:
+      uptext = "Climb-up";
+      camera.pitchCameraAsync(General.random(22, 45));
+      stairTile = STAIRS_TILE_0;
+      Camera.turnToTile(stairTile);
+      break;
+    case 1:
+      stairTile = STAIRS_TILE_1;
+      if (state == State.TRAVELLING_TO_COWS) {
         uptext = "Climb-down";
-        break;
-      default:
-        stairTile = STAIRS_TILE_0;
-        sleep(200);
-        break;
+      } else if (state == State.TRAVELLING_TO_BANK) {
+        uptext = "Climb-up";
+      }
+      break;
+    case 2:
+      stairTile = STAIRS_TILE_2;
+      if (Camera.getCameraAngle() < 65) {
+        camera.pitchCameraAsync(General.random(65, 110));
+        sleep(212, 312);
+      }
+      uptext = "Climb-down";
+      break;
+    default:
+      stairTile = STAIRS_TILE_0;
+      sleep(200);
+      break;
     }
 
     RSObject stairs = getStair(stairTile);
-    if(stairs != null) {
-      if(!stairs.isOnScreen()) {
+    if (stairs != null) {
+      if (!stairs.isOnScreen()) {
         Camera.turnToTile(stairsTile);
         sleep(100, 200);
       }
-      if(utils.rightClickOnModel(stairs.getModel(), uptext + " Staircase")) {
-        if(plane == 0)
-          commonUtils.waitUntilIdle(125, 175);
+      if (utils.rightClickOnModel(stairs.getModel(), uptext + " Staircase")) {
+        if (plane == 0)
+          commons.waitUntilIdle(125, 175);
         else
           sleep(1251, 1567);
       }
     }
 
   }
+
   private void climbTrapdoor() {
     RSObject[] trapdoor = Objects.findNearest(20, TRAPDOOR_ID);
-    if(trapdoor != null && trapdoor.length > 0) {
-      cameraUtils.pitchCameraAsync(General.random(60, 100));
-      if(!trapdoor[0].isOnScreen()) {
+    if (trapdoor != null && trapdoor.length > 0) {
+      camera.pitchCameraAsync(General.random(60, 100));
+      if (!trapdoor[0].isOnScreen()) {
         Camera.turnToTile(stairsTile);
         sleep(100, 200);
       }
-      if(commonUtils.clickModel(trapdoor[0].getModel(), "Climb-down Trapdoor")) {
-        commonUtils.waitUntilIdle(1000, 2000);
+      if (commons.clickModel(trapdoor[0].getModel(), "Climb-down Trapdoor")) {
+        commons.waitUntilIdle(1000, 2000);
       }
     }
   }
+
   private void updateStairVariables() {
     this.plane = Player.getPosition().getPlane();
-    switch(plane) {
-      case 0:
-        stairsTile = GROUND_FLOOR_TILE;
-        distToStairs = Player.getPosition().distanceTo(GROUND_FLOOR_TILE);
-        break;
-      case 1:
-        stairsTile = FIRST_FLOOR_TILE;
-        distToStairs = Player.getPosition().distanceTo(FIRST_FLOOR_TILE);
-        break;
-      case 2:
-        stairsTile = SECOND_FLOOR_TILE;
-        distToStairs = Player.getPosition().distanceTo(SECOND_FLOOR_TILE);
-        break;
-      default:
-        println("Player.getPosition().getPlane() returned invalid value! Trying luck with default values.");
-        stairsTile = GROUND_FLOOR_TILE;
-        distToStairs = Player.getPosition().distanceTo(GROUND_FLOOR_TILE);
-        break;
+    switch (plane) {
+    case 0:
+      stairsTile = GROUND_FLOOR_TILE;
+      distToStairs = Player.getPosition().distanceTo(GROUND_FLOOR_TILE);
+      break;
+    case 1:
+      stairsTile = FIRST_FLOOR_TILE;
+      distToStairs = Player.getPosition().distanceTo(FIRST_FLOOR_TILE);
+      break;
+    case 2:
+      stairsTile = SECOND_FLOOR_TILE;
+      distToStairs = Player.getPosition().distanceTo(SECOND_FLOOR_TILE);
+      break;
+    default:
+      println("Player.getPosition().getPlane() returned invalid value! Trying luck with default values.");
+      stairsTile = GROUND_FLOOR_TILE;
+      distToStairs = Player.getPosition().distanceTo(GROUND_FLOOR_TILE);
+      break;
     }
   }
 
   private boolean isOriginalCombatStance() {
-    return selectedCombatStyleIndex == Combat.getSelectedStyleIndex();
+    return combatStyleIndexOnStart == Combat.getSelectedStyleIndex();
   }
+
   private boolean atAKGate() {
     return Player.getPosition().distanceTo(AK_GATE_TILE) < 7;
   }
+
   private boolean isGateOpen() {
     return Doors.isDoorAt(GATE_OPEN_TILE2, true);
   }
+
   private boolean inCellar() {
     return Player.getPosition().distanceTo(CELLAR_BANK_TILE) < 20;
   }
+
   private boolean inAlKharid() {
     return Player.getPosition().getX() > 3267;
   }
+
   private boolean atGate() {
     return Player.getPosition().distanceTo(GATE_TILE) < 7;
   }
+
   private boolean inLumbyBank() {
     return BANKAREA_TOP.contains(Player.getPosition());
   }
+
   private boolean atAnyBank() {
     return (Player.getPosition().getPlane() == 2 && Player.getPosition().distanceTo(BANK_TILE) < 13 || inCellar() || inAlKharidBank());
   }
+
   private boolean inAlKharidBank() {
     return BANKAREA_AK.contains(Player.getPosition());
   }
+
   private boolean atCows() {
     return COW_PIT.contains(Player.getPosition());
   }
+
   private boolean isTeleportRandom(RANDOM_SOLVERS r) {
-    return r == RANDOM_SOLVERS.APPENDAGE || r == RANDOM_SOLVERS.BEEKEEPER || r == RANDOM_SOLVERS.CAPTARNAV || r == RANDOM_SOLVERS.DRILLDEMON || r == RANDOM_SOLVERS.FREAKYFORESTER
-        || r == RANDOM_SOLVERS.FROGCAVE || r == RANDOM_SOLVERS.GRAVEDIGGER || r == RANDOM_SOLVERS.MAZE || r == RANDOM_SOLVERS.MIME || r == RANDOM_SOLVERS.MOLLY
-        || r == RANDOM_SOLVERS.MORDAUT || r == RANDOM_SOLVERS.PILLORY || r == RANDOM_SOLVERS.PINBALL || r == RANDOM_SOLVERS.PRISONPETE || r == RANDOM_SOLVERS.QUIZ
+    return r == RANDOM_SOLVERS.APPENDAGE || r == RANDOM_SOLVERS.BEEKEEPER || r == RANDOM_SOLVERS.CAPTARNAV
+        || r == RANDOM_SOLVERS.DRILLDEMON || r == RANDOM_SOLVERS.FREAKYFORESTER || r == RANDOM_SOLVERS.FROGCAVE
+        || r == RANDOM_SOLVERS.GRAVEDIGGER || r == RANDOM_SOLVERS.MAZE || r == RANDOM_SOLVERS.MIME
+        || r == RANDOM_SOLVERS.MOLLY || r == RANDOM_SOLVERS.MORDAUT || r == RANDOM_SOLVERS.PILLORY
+        || r == RANDOM_SOLVERS.PINBALL || r == RANDOM_SOLVERS.PRISONPETE || r == RANDOM_SOLVERS.QUIZ
         || r == RANDOM_SOLVERS.SCAPERUNE;
   }
 
   private int getDistanceToTrapdoor() {
     return Player.getPosition().distanceTo(TRAPDOOR_TILE);
   }
+
   private int getTotalCombatExp() {
-    return Skills.getXP(SKILLS.ATTACK) + Skills.getXP(SKILLS.STRENGTH) + Skills.getXP(SKILLS.DEFENCE) + Skills.getXP(SKILLS.HITPOINTS) + Skills.getXP(SKILLS.MAGIC)
-        + Skills.getXP(SKILLS.RANGED);
+    return Skills.getXP(SKILLS.ATTACK) + Skills.getXP(SKILLS.STRENGTH) + Skills.getXP(SKILLS.DEFENCE)
+        + Skills.getXP(SKILLS.HITPOINTS) + Skills.getXP(SKILLS.MAGIC) + Skills.getXP(SKILLS.RANGED);
   }
 
   private RSObject getStair(Positionable stairTile) {
     RSObject[] stairs = Objects.getAt(stairTile);
-    if(stairs != null && stairs.length > 0) {
-      for(RSObject stair : stairs) {
-        if(stair != null) {
+    if (stairs != null && stairs.length > 0) {
+      for (RSObject stair : stairs) {
+        if (stair != null) {
           RSObjectDefinition def = stair.getDefinition();
-          if(def != null) {
+          if (def != null) {
             String[] actions = def.getActions();
-            if(actions != null) {
-              for(String action : actions) {
-                if(action != null) {
-                  if(action.contains("Climb")) {
+            if (actions != null) {
+              for (String action : actions) {
+                if (action != null) {
+                  if (action.contains("Climb")) {
                     return stair;
                   }
                 }
@@ -883,29 +908,39 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, End
     }
     return null;
   }
+
   private RSGroundItem findNearestLoot(int lootId) {
     RSGroundItem[] hides = GroundItems.findNearest(lootId);
-    for(int i = 0; i < hides.length; i++) {
-      if(COW_PIT.contains(hides[i].getPosition())) {
+    for (int i = 0; i < hides.length; i++) {
+      if (COW_PIT.contains(hides[i].getPosition())) {
         return hides[i];
       }
     }
     return null;
   }
+
   private RSNPC findNearestTarget() {
-    RSCharacter rsCharacter = Player.getRSPlayer().getInteractingCharacter();
-    if(rsCharacter != null) {
-      RSNPC target = (RSNPC) rsCharacter;
-      if(target.getCombatLevel() == 2) {
+    RSCharacter character = Player.getRSPlayer().getInteractingCharacter();
+    if (character instanceof RSNPC) {
+      RSNPC target = (RSNPC) character;
+      if (target.getCombatLevel() == 2) {
+        return target;
+      }
+    }
+    character = Combat.getTargetEntity();
+    if (character instanceof RSNPC) {
+      RSNPC target = (RSNPC) character;
+      if (target.getCombatLevel() == 2) {
         return target;
       }
     }
 
     RSNPC[] cows = NPCs.getAll();
     cows = NPCs.sortByDistance(Player.getPosition(), cows);
-    for(int i = 0; i < cows.length; i++) {
-      if(!cows[i].isInCombat() && cows[i].getCombatLevel() == 2 && COW_PIT.contains(cows[i].getPosition())) {
-        return cows[i];
+    for (RSNPC cow : cows) {
+      if (!cow.isInCombat() && cow.getCombatLevel() == 2 && !blackList.contains(cow)
+          && COW_PIT.contains(cow.getPosition())) {
+        return cow;
       }
     }
     return null;
@@ -923,31 +958,37 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, End
       return SKILLS.DEFENCE;
     }
     return SKILLS.HITPOINTS;
-  }  
+  }
+
   private enum State {
-    TRAVELLING_TO_COWS, TRAVELLING_TO_BANK, KILLING_COWS, BANKING, SHITHOLE, HOPPING_WORLDS
+    TRAVELLING_TO_COWS,
+    TRAVELLING_TO_BANK,
+    KILLING_COWS,
+    BANKING,
+    SHITHOLE,
+    HOPPING_WORLDS
   }
 
   private State getState() { // TODO BANKING ENUM
-    if(Game.getCurrentWorld() != startingWorld) {
+    if (Game.getCurrentWorld() != startingWorld) {
       return State.HOPPING_WORLDS;
-    } else if(atCows()) {
-      if(!Inventory.isFull())
+    } else if (atCows()) {
+      if (!Inventory.isFull())
         return State.KILLING_COWS;
       else
         return State.TRAVELLING_TO_BANK;
-    } else if(atAnyBank()) {
-      if((Inventory.getAll().length == 0 && (bankLocation == 0 || bankLocation == 1))
+    } else if (atAnyBank()) {
+      if ((Inventory.getAll().length == 0 && (bankLocation == 0 || bankLocation == 1))
           || (bankLocation == 2 && Inventory.getCount(COINS_ID) >= 20 && !donePrinceAliQuest && Inventory.getCount(COWHIDE_ID) <= 0)
           || (bankLocation == 2 && donePrinceAliQuest && Inventory.getAll().length == 0) || bankLocation == -1) {
         return State.TRAVELLING_TO_COWS;
       } else {
         return State.BANKING;
       }
-    } else if(Player.getPosition().distanceTo(CENTRE_TILE) > 100 && !inCellar()) {
+    } else if (Player.getPosition().distanceTo(CENTRE_TILE) > 100 && !inCellar()) {
       return State.SHITHOLE;
     } else {
-      if(Inventory.isFull())
+      if (Inventory.isFull())
         return State.TRAVELLING_TO_BANK;
       else
         return State.TRAVELLING_TO_COWS;
@@ -972,33 +1013,39 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, End
 
   @Override
   public void onRandom(RANDOM_SOLVERS r) {
-    if(isTeleportRandom(r))
+    if (isTeleportRandom(r)) {
       return;
+    }
 
-    if(r == RANDOM_SOLVERS.SECURITYGUARD || r == RANDOM_SOLVERS.STRANGEPLANT)
+    if (r == RANDOM_SOLVERS.SECURITYGUARD || r == RANDOM_SOLVERS.STRANGEPLANT) {
       return;
+    }
 
-    if(r == RANDOM_SOLVERS.COMBATRANDOM) {
-      if(COW_PIT.contains(Player.getPosition()))
+    if (r == RANDOM_SOLVERS.COMBATRANDOM) {
+      if (COW_PIT.contains(Player.getPosition())) {
         runAway();
+      }
       return;
     }
 
     long k = System.currentTimeMillis();
-    while(Player.getRSPlayer().isInCombat()) {
-      if(Timing.timeFromMark(k) > 5000)
+    while (Player.getRSPlayer().isInCombat()) {
+      if (Timing.timeFromMark(k) > 5000) {
         break;
+      }
       sleep(100, 200);
     }
 
   }
+
   @Override
   public void randomSolved(RANDOM_SOLVERS arg0) {
 
   }
+
   @Override
   public boolean randomFailed(RANDOM_SOLVERS r) {
-    if(isTeleportRandom(r)) {
+    if (isTeleportRandom(r)) {
       return false;
     }
     return true;
@@ -1009,33 +1056,35 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, End
     utils.onEnd();
     gui.dispose();
   }
+
   @Override
   public void onBreakEnd() {
   }
+
   @Override
   public void onBreakStart() {
-    if(!utils.isAutoRetaliateIsEnabled()) {
+    if (!utils.isAutoRetaliateIsEnabled()) {
       Combat.setAutoRetaliate(true);
     }
-    while(Player.getRSPlayer().isInCombat()) {
+    while (Player.getRSPlayer().isInCombat()) {
       sleep(100, 200);
     }
     long t = System.currentTimeMillis();
-    while(System.currentTimeMillis() - t < General.random(10000, 11000)) {
+    while (System.currentTimeMillis() - t < General.random(10000, 11000)) {
       sleep(100, 200);
     }
   }
 
   @Override
   public void onBreakStart(long arg0) {
-    if(!utils.isAutoRetaliateIsEnabled()) {
+    if (!utils.isAutoRetaliateIsEnabled()) {
       Combat.setAutoRetaliate(true);
     }
-    while(Player.getRSPlayer().isInCombat()) {
+    while (Player.getRSPlayer().isInCombat()) {
       sleep(100, 200);
     }
     long t = System.currentTimeMillis();
-    while(System.currentTimeMillis() - t < General.random(10000, 11000)) {
+    while (System.currentTimeMillis() - t < General.random(10000, 11000)) {
       sleep(100, 200);
     }
   }
@@ -1060,13 +1109,13 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, End
     } catch (InterruptedException e) {
       e.printStackTrace();
     }
-    while(gui == null) {
+    while (gui == null) {
       sleep(100);
     }
-    while(!gui.isComplete()) {
-      if(!gui.isVisible()) {
+    while (!gui.isComplete()) {
+      if (!gui.isVisible()) {
         sleep(1000);
-        if(!gui.isComplete()) {
+        if (!gui.isComplete()) {
           isRunning = false;
           break;
         }
@@ -1074,25 +1123,25 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, End
       sleep(100);
     }
 
-    if(isRunning == false) {
+    if (isRunning == false) {
       return;
     }
 
     getLoot = gui.getLoot();
     bankLocation = gui.getBankLocation();
-    if(getLoot) {
+    if (getLoot) {
       println("Killing cows and looting hides!");
     } else {
       println("Only killing cows, not looting or banking!");
     }
 
-    if(bankLocation == -1) {
+    if (bankLocation == -1) {
 
-    } else if(bankLocation == 0) {
+    } else if (bankLocation == 0) {
       println("Banking in Lumbridge castle top floor!");
-    } else if(bankLocation == 1) {
+    } else if (bankLocation == 1) {
       println("Banking in Lumbridge cellar!");
-    } else if(bankLocation == 2) {
+    } else if (bankLocation == 2) {
       println("Banking in Al-Kharid!");
     } else {
       println("This should never be printed!");
@@ -1106,18 +1155,43 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, End
     expStart = getTotalCombatExp();
     Walking.setWalkingTimeout(7500L);
     saveInitialEquipment();
-    selectedCombatStyleIndex = Combat.getSelectedStyleIndex();
+    combatStyleIndexOnStart = Combat.getSelectedStyleIndex();
     startingWorld = Game.getCurrentWorld();
-    if(!commonUtils.isAutoRetaliateIsEnabled()) {
-      commonUtils.toggleAutoRetaliate();
+    if (!Combat.isAutoRetaliateOn()) {
+      Combat.setAutoRetaliate(true);
     }
     attackXPOnStart = Skills.getXP(SKILLS.ATTACK);
     strXPOnStart = Skills.getXP(SKILLS.STRENGTH);
     defXPOnStart = Skills.getXP(SKILLS.DEFENCE);
 
-    abc = new ABCUtil();
-
     sleep(General.random(100, 200));
+  }
+
+  @Override
+  public void clanMessageReceived(String name, String message) {
+  }
+
+  @Override
+  public void duelRequestReceived(String arg0, String arg1) {
+  }
+
+  @Override
+  public void personalMessageReceived(String name, String message) {
+  }
+
+  @Override
+  public void playerMessageReceived(String name, String message) {
+  }
+
+  @Override
+  public void serverMessageReceived(String message) {
+    if (message.contains("Someone else is fighting that")) {
+      killingTarget = false;
+    }
+  }
+
+  @Override
+  public void tradeRequestReceived(String name) {
 
   }
 }

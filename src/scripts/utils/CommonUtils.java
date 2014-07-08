@@ -112,26 +112,26 @@ public class CommonUtils {
     }
     return ChooseOption.select(upText);
   }
-  public boolean sleepwalkTo(RSTile toTile) {
+  public boolean sleepwalkTo(final RSTile toTile) {
     RSTile dest = Game.getDestination();
     if(dest != null) {
       if(dest.distanceTo(toTile) > 3) {
-        if(Walking.walkPath(Walking.generateStraightPath(toTile))) {
+        if(Walking.walkPath(Walking.randomizePath(Walking.generateStraightPath(toTile), 1, 1))) {
           return true;
         }
       }
     } else {
-      if(Walking.walkPath(Walking.generateStraightPath(toTile))) {
+      if(Walking.walkPath(Walking.randomizePath(Walking.generateStraightPath(toTile), 1, 1))) {
         return true;
       }
     }
     return false;
   }
-  public boolean sleepwalkPath(RSTile[] path) {
+  public boolean sleepwalkPath(final RSTile[] path) {
     RSTile dest = Game.getDestination();
     if(dest != null) {
       if(dest.distanceTo(path[path.length - 1]) > 3) {
-        if(Walking.walkPath(path)) {
+        if(Walking.walkPath(Walking.randomizePath(path, 1, 1))) {
           return true;
         }
       }
