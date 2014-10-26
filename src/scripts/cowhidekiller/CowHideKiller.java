@@ -676,7 +676,7 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, Mes
         openGate();
       } else {
         if(Walking.walkTo(new RSTile(3259 + General.random(-1, 3), 3271 + General.random(-3, 4), 0))) {
-          sleep(50, 100);
+          sleep(300, 700);
         }
       }
     }

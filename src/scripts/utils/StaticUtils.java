@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.imageio.ImageIO;
 
-public class StaticUtils {
+public final class StaticUtils {
 
    private StaticUtils() {};
 
