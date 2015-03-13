@@ -3,6 +3,7 @@ package scripts.kebabuyer;
 import java.awt.Color;
 import java.awt.Graphics;
 
+import org.tribot.api.DynamicClicking;
 import org.tribot.api.General;
 import org.tribot.api.Timing;
 import org.tribot.api.input.Mouse;
@@ -83,7 +84,7 @@ public class KebabBuyer extends Script implements Painting, RandomEvents {
         case SHITHOLE:
           break;
       }
-      sleep(50, 100);
+      sleep(100, 200);
     }
   }
 
@@ -94,7 +95,7 @@ public class KebabBuyer extends Script implements Painting, RandomEvents {
     if (!Banking.isBankScreenOpen()) {
       if (Inventory.open())
         sleep(300, 500);
-      if (Banking.openBankBooth())
+      if (Banking.openBank())
         commonUtils.waitUntilIdle(300, 500);
     } else {
       if (Banking.depositAllExcept(COINS_ID) > 0)
@@ -112,7 +113,7 @@ public class KebabBuyer extends Script implements Painting, RandomEvents {
       String message = NPCChat.getMessage();
       if (message != null && !message.equals("")) {
         if (message.contains("Yes please")) {
-          if (NPCChat.clickContinue(false)) {
+          if (NPCChat.clickContinue(true)) {
             kebabsBought++;
           }
         } else {
@@ -144,8 +145,8 @@ public class KebabBuyer extends Script implements Painting, RandomEvents {
       RSNPC karim = findKarim();
       if (karim != null) {
         if (Player.getRSPlayer().getInteractingCharacter() == null || !KEBAB_AREA.contains(Player.getPosition())) {
-          utils.clickNPC(karim.getModel(), "Talk-to");
-          sleep(350, 500);
+          DynamicClicking.clickRSNPC(karim, "Talk-to");
+          sleep(400, 500);
         }
       }
     } else {

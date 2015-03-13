@@ -1,8 +1,8 @@
 package scripts.utils;
 
 import org.tribot.api.General;
+import org.tribot.api.interfaces.Positionable;
 import org.tribot.api2007.Camera;
-import org.tribot.api2007.types.RSTile;
 
 public class CameraUtils {
 
@@ -53,7 +53,7 @@ public class CameraUtils {
          }
       }
    }
-   public void rotateCameraToTileAsync(RSTile tile) {
+   public void rotateCameraToTileAsync(Positionable tile) {
       if (!isCameraRotating) {
          synchronized (rotationThread) {
             rotationThread.setTileRotation(tile);

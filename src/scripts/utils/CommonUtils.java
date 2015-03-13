@@ -6,6 +6,7 @@ import java.awt.Point;
 import org.tribot.api.General;
 import org.tribot.api.Timing;
 import org.tribot.api.input.Mouse;
+import org.tribot.api.interfaces.Positionable;
 import org.tribot.api2007.ChooseOption;
 import org.tribot.api2007.Game;
 import org.tribot.api2007.GameTab;
@@ -112,7 +113,7 @@ public class CommonUtils {
     }
     return ChooseOption.select(upText);
   }
-  public boolean sleepwalkTo(final RSTile toTile) {
+  public boolean sleepwalkTo(final Positionable toTile) {
     RSTile dest = Game.getDestination();
     if(dest != null) {
       if(dest.distanceTo(toTile) > 3) {
