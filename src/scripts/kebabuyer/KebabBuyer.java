@@ -212,7 +212,7 @@ public class KebabBuyer extends Script implements Painting, RandomEvents {
         cameraUtils.pitchCameraAsync(General.random(22, 110));
         Camera.turnToTile(CLOSED_DOOR_TILE);
       }
-      if (utils.clickModelExact(door[0].getModel(), "Open Door")) {
+      if (DynamicClicking.clickRSObject(door[0], "Open door")) {
         commonUtils.waitUntilIdle(221, 341);
       }
     }

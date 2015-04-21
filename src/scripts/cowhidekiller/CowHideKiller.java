@@ -7,6 +7,7 @@ import java.util.List;
 
 import javax.swing.SwingUtilities;
 
+import org.tribot.api.DynamicClicking;
 import org.tribot.api.General;
 import org.tribot.api.Timing;
 import org.tribot.api.input.Mouse;
@@ -780,7 +781,7 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, Mes
         Camera.turnToTile(stairsTile);
         sleep(100, 200);
       }
-      if (utils.rightClickOnModel(stairs.getModel(), uptext + " Staircase")) {
+      if (DynamicClicking.clickRSObject(stairs, uptext + " Staircase")) {
         if (plane == 0)
           commons.waitUntilIdle(125, 175);
         else

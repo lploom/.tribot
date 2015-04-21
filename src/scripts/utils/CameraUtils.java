@@ -74,30 +74,31 @@ public class CameraUtils {
       NORTH, WEST, EAST, SOUTH
    }
    public void turnCameraTo(CARDINAL cardinal) {
-      
-      switch(cardinal) {
-         case EAST:
-            if(Camera.getCameraRotation() < 245 || Camera.getCameraRotation() > 290) {
-               rotateCameraAsync(General.random(250, 285));
-            }
-            break; 
-         case NORTH:
-            if(Camera.getCameraRotation() < 25 || Camera.getCameraRotation() > 335) {
-               rotateCameraAsync(General.random(170, 190));
-            }
-            break;
-         case SOUTH:
-            if(Camera.getCameraRotation() < 165 || Camera.getCameraRotation() > 195) {
-               rotateCameraAsync(General.random(170, 190));
-            }
-            break;
-         case WEST:
-            if(Camera.getCameraRotation() < 75 || Camera.getCameraRotation() > 105) {
-               rotateCameraAsync(General.random(80, 100));
-            }
-            break;   
+    if (!isCameraRotating) {
+      switch (cardinal) {
+      case EAST:
+        if (Camera.getCameraRotation() < 245 || Camera.getCameraRotation() > 290) {
+          rotateCameraAsync(General.random(250, 285));
+        }
+        break;
+      case NORTH:
+        if (Camera.getCameraRotation() > 25 && Camera.getCameraRotation() < 335) {
+          rotateCameraAsync(General.random(0, 15));
+        }
+        break;
+      case SOUTH:
+        if (Camera.getCameraRotation() < 165 || Camera.getCameraRotation() > 195) {
+          rotateCameraAsync(General.random(170, 190));
+        }
+        break;
+      case WEST:
+        if (Camera.getCameraRotation() < 75 || Camera.getCameraRotation() > 105) {
+          rotateCameraAsync(General.random(80, 100));
+        }
+        break;
       }
-      
+    }
+
    }
    
    public void onEnd() {

@@ -1,8 +1,6 @@
 package scripts.utils;
 
-import java.awt.Color;
 import java.awt.Point;
-import java.util.ArrayList;
 
 import org.tribot.api.DynamicClicking;
 import org.tribot.api.General;
@@ -21,7 +19,6 @@ import org.tribot.api2007.NPCs;
 import org.tribot.api2007.Objects;
 import org.tribot.api2007.Options;
 import org.tribot.api2007.Player;
-import org.tribot.api2007.Screen;
 import org.tribot.api2007.Skills;
 import org.tribot.api2007.Skills.SKILLS;
 import org.tribot.api2007.Walking;
@@ -38,46 +35,12 @@ import scripts.utils.KMUtils.Equipment.EQUIPMENT;
 
 public class KMUtils {
 
-   private static final int LUMBY_BOOTH_IDS = 18491;
-   private static final int EDGE_BANK_BOOTH_ID = 2196;
-
    private CameraUtils cameraUtils;
    private CommonUtils commonUtils;
 
    public KMUtils(CameraUtils cameraUtils, CommonUtils commonUtils) {
       this.commonUtils = commonUtils;
       this.cameraUtils = cameraUtils;
-   }
-
-   public int[] getAllEquipmentIds() {  
-      ArrayList<Integer> eq = new ArrayList<>(11);
-
-      eq.add(Equipment.getEquipment(EQUIPMENT.HELM));
-      eq.add(Equipment.getEquipment(EQUIPMENT.CAPE));
-      eq.add(Equipment.getEquipment(EQUIPMENT.NECK));
-      eq.add(Equipment.getEquipment(EQUIPMENT.ARROW));
-      eq.add(Equipment.getEquipment(EQUIPMENT.WEAPON));
-      eq.add(Equipment.getEquipment(EQUIPMENT.BODY));
-      eq.add(Equipment.getEquipment(EQUIPMENT.SHIELD));
-      eq.add(Equipment.getEquipment(EQUIPMENT.LEGS));
-      eq.add(Equipment.getEquipment(EQUIPMENT.GLOVES));
-      eq.add(Equipment.getEquipment(EQUIPMENT.BOOTS));
-      eq.add(Equipment.getEquipment(EQUIPMENT.RING));
-
-      int[] answer = new int[eq.size()];
-      for (int i = 0; i < eq.size(); i++) {
-         answer[i] = eq.get(i).intValue();
-      }
-
-      return answer;
-   }
-
-   public int getEdgeBankBoothID() {
-      return EDGE_BANK_BOOTH_ID;
-   }
-
-   public int getLumbyBankBoothID() {
-      return LUMBY_BOOTH_IDS;
    }
 
    public boolean isCharacterHealthy(int offset) {
@@ -135,128 +98,6 @@ public class KMUtils {
       return false;
    }
 
-   public boolean clickModelExact(RSModel model, String upText) {
-      if (model != null) {
-         Point[] ps = model.getAllVisiblePoints();
-         if (ps.length > 0) {
-            Point p = average(ps);
-            Mouse.move(p);
-            if (!cameraUtils.isCameraPitching() && !cameraUtils.isCameraRotating()
-                  && Timing.waitUptext(upText, General.random(250, 350))) {
-               Mouse.click(1);
-               return true;
-
-            }
-            else {
-               Mouse.click(3);
-               long t = System.currentTimeMillis();
-               while (!ChooseOption.isOpen()) {
-                  commonUtils.sleep(250, 350);
-                  if (Timing.timeFromMark(t) >= General.random(5000, 7000))
-                     break;
-               }
-               return ChooseOption.select(upText);
-            }
-         }
-      }
-      return false;
-   }
-
-   public boolean leftClickModel(RSModel model, String upText) {
-      if (model != null) {
-         Point[] ps = model.getAllVisiblePoints();
-         if (ps.length > 0) {
-            Point p = average(ps);
-            p.setLocation(p.x + General.random(-7, 7),
-                  p.y + General.random(-7, 7));
-            Mouse.move(p);
-            if (Timing.waitUptext(upText, General.random(500, 600))) {
-               Mouse.click(1);
-               commonUtils.sleep(50, 75);
-               return Screen.getColorAt(Mouse.getPos()).equals(Color.RED);
-            }
-         }
-      }
-      return false;
-   }
-
-   public boolean leftClickModelExactInstant(RSModel model) {
-      if (model != null) {
-         Point[] ps = model.getAllVisiblePoints();
-         if (ps.length > 0) {
-            Point p = average(ps);
-            Mouse.move(p);
-            Mouse.click(1);
-            return Screen.getColorAt(Mouse.getPos()).equals(Color.RED);
-         }
-      }
-      return false;
-   }
-
-   public boolean leftClickModelExact(RSModel model, String upText) {
-      if (model != null) {
-         Point[] ps = model.getAllVisiblePoints();
-         if (ps.length > 0) {
-            Point p = average(ps);
-            Mouse.move(p);
-            if (Timing.waitUptext(upText, General.random(500, 600))) {
-               Mouse.click(1);
-               commonUtils.sleep(50, 75);
-               return Screen.getColorAt(Mouse.getPos()).equals(Color.RED);
-            }
-         }
-      }
-      return false;
-   }
-
-   public boolean rightClickOnModel(RSModel model, String upText) {
-      if (model != null) {
-         Point[] ps = model.getAllVisiblePoints();
-         if (ps.length > 0) {
-            Point p = average(ps);
-            p.setLocation(p.x + General.random(-5, 5), p.y + General.random(-5, 5));
-            Mouse.move(p);
-            Mouse.click(3);
-            long t = System.currentTimeMillis();
-            while (!ChooseOption.isOpen()) {
-               commonUtils.sleep(100, 250);
-               if (Timing.timeFromMark(t) >= General.random(5000, 7000))
-                  break;
-            }
-            return ChooseOption.select(upText);
-         }
-      }
-      return false;
-   }
-
-   public boolean clickNPC(RSModel model, String upText) {
-      if (model != null) {
-         Point[] ps = model.getAllVisiblePoints();
-         if (ps.length > 0) {
-            Point p = average(ps);
-            p.setLocation(p.x + General.random(-3, 3),
-                  p.y + General.random(-3, 3));
-            Mouse.hop(p);
-            if (!cameraUtils.isCameraPitching() && !cameraUtils.isCameraRotating()
-                  && Timing.waitUptext(upText, General.random(250, 350))) {
-               Mouse.click(1);
-               commonUtils.sleep(250, 350);
-               return Player.getRSPlayer().getInteractingCharacter() != null;
-            }
-         }
-         else {
-            Mouse.click(3);
-            long t = System.currentTimeMillis();
-            while (!ChooseOption.isOpen()) {
-               commonUtils.sleep(100, 250);
-               if (Timing.timeFromMark(t) >= General.random(5000, 7000))
-                  break;
-            }
-            return ChooseOption.select(upText);
-         }
-      }
-      return false;
-   }
 
    public String getLastMessage() {
       if (Interfaces.get(137, 2) != null) {
@@ -304,18 +145,6 @@ public class KMUtils {
          }
       }
       return null;
-   }
-
-   public boolean isItemEquipped(int itemID) {
-      int[] eq = getAllEquipmentIds();
-      if (eq != null && eq.length > 0) {
-         for (int i = 0; i < eq.length; i++) {
-            if (eq[i] == itemID) {
-               return true;
-            }
-         }
-      }
-      return false;
    }
 
    public RSObject getNearestObject(int[] ids, int dist) {
@@ -534,18 +363,6 @@ public class KMUtils {
       return false;
    }
 
-   public boolean useItemOnEnvironment(RSItem item, RSObject obj, String upText) {
-      if (GameTab.getOpen() != TABS.INVENTORY) {
-         Inventory.open();
-      }
-      if (item.click("Use")) {
-         if (clickModelExact(obj.getModel(), upText)) {
-            return true;
-         }
-      }
-      return false;
-   }
-
    public boolean openBankBooth(String boothName) {
       RSObject[] booths = Objects.findNearest(20, "Bank booth");
       if (booths != null && booths.length > 0) {
@@ -606,286 +423,6 @@ public class KMUtils {
       return false;
    }
 
-   public boolean unequipHelm(int... items) {
-      int helmID = KMUtils.Equipment.getEquipment(EQUIPMENT.HELM);
-      if (helmID == -1)
-         return false;
-      for (int i : items) {
-         if (i == helmID)
-            return false;
-      }
-      if (!GameTab.getOpen().equals(TABS.EQUIPMENT)) {
-         GameTab.open(TABS.EQUIPMENT);
-         commonUtils.sleep(150, 200);
-      }
-      if (Interfaces.get(387, 28) != null) {
-         for (RSItem i : Interfaces.get(387, 28).getItems()) {
-            if (i.getID() == helmID) {
-               Mouse.clickBox(633, 216, 653, 235, 1);
-               return true;
-            }
-         }
-      }
-      return false;
-   }
-
-   public boolean unequipCape(int... items) {
-      int capeID = KMUtils.Equipment.getEquipment(EQUIPMENT.CAPE);
-      if (capeID == -1)
-         return false;
-      for (int i : items) {
-         if (i == capeID)
-            return false;
-      }
-      if (!GameTab.getOpen().equals(TABS.EQUIPMENT)) {
-         GameTab.open(TABS.EQUIPMENT);
-         commonUtils.sleep(150, 200);
-      }
-      if (Interfaces.get(387, 28) != null) {
-         for (RSItem i : Interfaces.get(387, 28).getItems()) {
-            if (i.getID() == capeID) {
-               Mouse.clickBox(592, 256, 611, 273, 1);
-               return true;
-            }
-         }
-      }
-      return false;
-   }
-
-   public boolean unequipNeck(int... items) {
-      int neckID = KMUtils.Equipment.getEquipment(EQUIPMENT.NECK);
-      if (neckID == -1)
-         return false;
-      for (int i : items) {
-         if (i == neckID)
-            return false;
-      }
-      if (!GameTab.getOpen().equals(TABS.EQUIPMENT)) {
-         GameTab.open(TABS.EQUIPMENT);
-         commonUtils.sleep(150, 200);
-      }
-      if (Interfaces.get(387, 28) != null) {
-         for (RSItem i : Interfaces.get(387, 28).getItems()) {
-            if (i.getID() == neckID) {
-               Mouse.clickBox(636, 255, 653, 273, 1);
-               return true;
-            }
-         }
-      }
-      return false;
-   }
-
-   public boolean unequipArrows(int... items) {
-      int arrowID = KMUtils.Equipment.getEquipment(EQUIPMENT.ARROW);
-      if (arrowID == -1)
-         return false;
-      for (int i : items) {
-         if (i == arrowID)
-            return false;
-      }
-      if (!GameTab.getOpen().equals(TABS.EQUIPMENT)) {
-         GameTab.open(TABS.EQUIPMENT);
-         commonUtils.sleep(150, 200);
-      }
-      if (Interfaces.get(387, 28) != null) {
-         for (RSItem i : Interfaces.get(387, 28).getItems()) {
-            if (i.getID() == arrowID) {
-               Mouse.clickBox(674, 255, 694, 273, 1);
-               return true;
-            }
-         }
-      }
-      return false;
-   }
-
-   public boolean unequipWeapon(int... items) {
-      int weaponID = KMUtils.Equipment.getEquipment(EQUIPMENT.WEAPON);
-      if (weaponID == -1)
-         return false;
-      for (int i : items) {
-         if (i == weaponID)
-            return false;
-      }
-      if (!GameTab.getOpen().equals(TABS.EQUIPMENT)) {
-         GameTab.open(TABS.EQUIPMENT);
-         commonUtils.sleep(150, 200);
-      }
-      if (Interfaces.get(387, 28) != null) {
-         for (RSItem i : Interfaces.get(387, 28).getItems()) {
-            if (i.getID() == weaponID) {
-               Mouse.clickBox(580, 295, 595, 312, 1);
-               return true;
-            }
-         }
-      }
-      return false;
-   }
-
-   public boolean unequipBody(int... items) {
-      int bodyID = KMUtils.Equipment.getEquipment(EQUIPMENT.BODY);
-      if (bodyID == -1)
-         return false;
-      for (int i : items) {
-         if (i == bodyID)
-            return false;
-      }
-      if (!GameTab.getOpen().equals(TABS.EQUIPMENT)) {
-         GameTab.open(TABS.EQUIPMENT);
-         commonUtils.sleep(150, 200);
-      }
-      if (Interfaces.get(387, 28) != null) {
-         for (RSItem i : Interfaces.get(387, 28).getItems()) {
-            if (i.getID() == bodyID) {
-               Mouse.clickBox(634, 297, 652, 313, 1);
-               return true;
-            }
-         }
-      }
-      return false;
-   }
-
-   public boolean unequipShield(int... items) {
-      int sheildID = KMUtils.Equipment.getEquipment(EQUIPMENT.SHIELD);
-      if (sheildID == -1)
-         return false;
-      for (int i : items) {
-         if (i == sheildID)
-            return false;
-      }
-      if (!GameTab.getOpen().equals(TABS.EQUIPMENT)) {
-         GameTab.open(TABS.EQUIPMENT);
-         commonUtils.sleep(150, 200);
-      }
-      if (Interfaces.get(387, 28) != null) {
-         for (RSItem i : Interfaces.get(387, 28).getItems()) {
-            if (i.getID() == sheildID) {
-               Mouse.clickBox(689, 295, 710, 314, 1);
-               return true;
-            }
-         }
-      }
-      return false;
-   }
-
-   public boolean unequipLegs(int... items) {
-      int legsID = KMUtils.Equipment.getEquipment(EQUIPMENT.LEGS);
-      if (legsID == -1)
-         return false;
-      for (int i : items) {
-         if (i == legsID)
-            return false;
-      }
-      if (!GameTab.getOpen().equals(TABS.EQUIPMENT)) {
-         GameTab.open(TABS.EQUIPMENT);
-         commonUtils.sleep(150, 200);
-      }
-      if (Interfaces.get(387, 28) != null) {
-         for (RSItem i : Interfaces.get(387, 28).getItems()) {
-            if (i.getID() == legsID) {
-               Mouse.clickBox(630, 335, 652, 353, 1);
-               return true;
-            }
-         }
-      }
-      return false;
-   }
-
-   public boolean unequipGloves(int... items) {
-      int glovesID = KMUtils.Equipment.getEquipment(EQUIPMENT.GLOVES);
-      if (glovesID == -1)
-         return false;
-      for (int i : items) {
-         if (i == glovesID)
-            return false;
-      }
-      if (!GameTab.getOpen().equals(TABS.EQUIPMENT)) {
-         GameTab.open(TABS.EQUIPMENT);
-         commonUtils.sleep(150, 200);
-      }
-      if (Interfaces.get(387, 28) != null) {
-         for (RSItem i : Interfaces.get(387, 28).getItems()) {
-            if (i.getID() == glovesID) {
-               Mouse.clickBox(579, 375, 597, 394, 1);
-               return true;
-            }
-         }
-      }
-      return false;
-   }
-
-   public boolean unequipBoots(int... items) {
-      int bootsID = KMUtils.Equipment.getEquipment(EQUIPMENT.BOOTS);
-      if (bootsID == -1)
-         return false;
-      for (int i : items) {
-         if (i == bootsID)
-            return false;
-      }
-      if (!GameTab.getOpen().equals(TABS.EQUIPMENT)) {
-         GameTab.open(TABS.EQUIPMENT);
-         commonUtils.sleep(150, 200);
-      }
-      if (Interfaces.get(387, 28) != null) {
-         for (RSItem i : Interfaces.get(387, 28).getItems()) {
-            if (i.getID() == bootsID) {
-               Mouse.clickBox(634, 374, 651, 395, 1);
-               return true;
-            }
-         }
-      }
-      return false;
-   }
-
-   public boolean unequipRing(int... items) {
-      int ringID = KMUtils.Equipment.getEquipment(EQUIPMENT.RING);
-      if (ringID == -1)
-         return false;
-      for (int i : items) {
-         if (i == ringID)
-            return false;
-      }
-      if (!GameTab.getOpen().equals(TABS.EQUIPMENT)) {
-         GameTab.open(TABS.EQUIPMENT);
-         commonUtils.sleep(150, 200);
-      }
-      if (Interfaces.get(387, 28) != null) {
-         for (RSItem i : Interfaces.get(387, 28).getItems()) {
-            if (i.getID() == ringID) {
-               Mouse.clickBox(690, 374, 709, 390, 1);
-               return true;
-            }
-         }
-      }
-      return false;
-   }
-
-   public void unequipAllExcept(int... items) {
-      unequipHelm(items);
-      unequipCape(items);
-      unequipNeck(items);
-      unequipArrows(items);
-      unequipWeapon(items);
-      unequipBody(items);
-      unequipShield(items);
-      unequipLegs(items);
-      unequipGloves(items);
-      unequipBoots(items);
-      unequipRing(items);
-   }
-
-   public void unequipAll() {
-      unequipHelm(0);
-      unequipCape(0);
-      unequipNeck(0);
-      unequipArrows(0);
-      unequipWeapon(0);
-      unequipBody(0);
-      unequipShield(0);
-      unequipLegs(0);
-      unequipGloves(0);
-      unequipBoots(0);
-      unequipRing(0);
-   }
 
    public void dropJunk(int[] JUNK) {
       if (Inventory.getCount(JUNK) > 0) {
@@ -946,16 +483,6 @@ public class KMUtils {
 
       return DynamicClicking.clickRSTile(pos, upText);
    }
-
-   public void openLumbyBank() {
-      RSObject[] bankBooths = Objects.findNearest(20, LUMBY_BOOTH_IDS);
-      if (bankBooths != null && bankBooths.length > 0) {
-         if (commonUtils.clickModel(bankBooths[0].getModel(), "Bank Bank booth")) {
-            commonUtils.waitUntilIdle(300, 750);
-         }
-      }
-   }
-
 
    public void setCameraAngle(int i) {
       Camera.setCameraAngle(i);
