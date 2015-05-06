@@ -348,7 +348,7 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, Mes
       General.sleep(450, 600);
     } else {
       killingTarget = true;
-      if (commons.clickModel(target.getModel(), "Attack")) {
+      if (DynamicClicking.clickRSNPC(target, "Attack")) {
         int antibanIndex = General.random(0, 4);
         if (antibanIndex < 3) {
           Mouse.move(General.random(-1000, 1000), General.random(-1000, 1000));
@@ -368,7 +368,7 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, Mes
           }
           if (!killingTarget) { // server message received
             if (!target.isInCombat() && !target.isInteractingWithMe()) {
-              blackList.add(target); // probably some dude attacking cow with weakening magic spells
+              blackList.add(target); // probably some dude splashing the target
             }
             break;
           }

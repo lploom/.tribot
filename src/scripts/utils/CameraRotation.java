@@ -13,8 +13,8 @@ public class CameraRotation extends Thread {
    private Positionable tileRotation;
    RotationState state;
 
-   public CameraRotation(CameraUtils tere) {
-      utils = tere;
+   public CameraRotation(CameraUtils cameraUtils) {
+      utils = cameraUtils;
    }
 
    @Override

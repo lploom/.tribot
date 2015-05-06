@@ -6,74 +6,86 @@ import org.tribot.api2007.Camera;
 
 public class CameraUtils {
 
-   private volatile boolean isCameraRotating = false;
-   private volatile boolean isCameraPitching = false;
-   private volatile boolean cameraMovement = false;
-   private CameraRotation rotationThread;
-   private CameraPitch pitchThread;
-   
-   public CameraUtils() {
-      rotationThread = new CameraRotation(this);
-      pitchThread = new CameraPitch(this);
-      rotationThread.start();
-      pitchThread.start();
-   }
-   
-   public CameraRotation getRotationThread() {
-      return rotationThread;
-   }
-   public CameraPitch getPitchThread() {
-      return pitchThread;
-   }
+  private volatile boolean isCameraRotating = false;
+  private volatile boolean isCameraPitching = false;
+  private volatile boolean cameraMovement = false;
+  private CameraRotation rotationThread;
+  private CameraPitch pitchThread;
 
-   public boolean isCameraPitching() {
-      return isCameraPitching;
-   }
-   public boolean isCameraRotating() {
-      return isCameraRotating;
-   }
-   public boolean isCameraMovement() {
-      return cameraMovement;
-   }
-  
-   public void setCameraPitching(boolean isCameraPitching) {
-      this.isCameraPitching = isCameraPitching;
-   }
-   public void setCameraRotating(boolean isCameraRotating) {
-      this.isCameraRotating = isCameraRotating;
-   }
-   public void setCameraMovement(boolean cameraMovement) {
-      this.cameraMovement = cameraMovement;
-   }
-   public void rotateCameraAsync(int deg) {
-      if (!isCameraRotating) {
-         synchronized (rotationThread) {
-            rotationThread.setRotation(deg);
-            rotationThread.notify();
-         }
+  public CameraUtils() {
+    rotationThread = new CameraRotation(this);
+    pitchThread = new CameraPitch(this);
+    rotationThread.start();
+    pitchThread.start();
+  }
+
+  public CameraRotation getRotationThread() {
+    return rotationThread;
+  }
+
+  public CameraPitch getPitchThread() {
+    return pitchThread;
+  }
+
+  public boolean isCameraPitching() {
+    return isCameraPitching;
+  }
+
+  public boolean isCameraRotating() {
+    return isCameraRotating;
+  }
+
+  public boolean isCameraMovement() {
+    return cameraMovement;
+  }
+
+  public void setCameraPitching(boolean isCameraPitching) {
+    this.isCameraPitching = isCameraPitching;
+  }
+
+  public void setCameraRotating(boolean isCameraRotating) {
+    this.isCameraRotating = isCameraRotating;
+  }
+
+  public void setCameraMovement(boolean cameraMovement) {
+    this.cameraMovement = cameraMovement;
+  }
+
+  public void rotateCameraAsync(int deg) {
+    if (!isCameraRotating) {
+      synchronized (rotationThread) {
+        rotationThread.setRotation(deg);
+        rotationThread.notify();
       }
-   }
-   public void rotateCameraToTileAsync(Positionable tile) {
-      if (!isCameraRotating) {
-         synchronized (rotationThread) {
-            rotationThread.setTileRotation(tile);
-            rotationThread.notify();
-         }
+    }
+  }
+
+  public void rotateCameraToTileAsync(Positionable tile) {
+    if (!isCameraRotating) {
+      synchronized (rotationThread) {
+        rotationThread.setTileRotation(tile);
+        rotationThread.notify();
       }
-   }
-   public void pitchCameraAsync(int angle) {
-      if (!isCameraPitching) {
-         synchronized (pitchThread) {
-            pitchThread.setAngle(angle);
-            pitchThread.notify();
-         }
+    }
+  }
+
+  public void pitchCameraAsync(int angle) {
+    if (!isCameraPitching) {
+      synchronized (pitchThread) {
+        pitchThread.setAngle(angle);
+        pitchThread.notify();
       }
-   }
-   
-   public enum CARDINAL {
-      NORTH, WEST, EAST, SOUTH
-   }
-   public void turnCameraTo(CARDINAL cardinal) {
+    }
+  }
+
+  public enum CARDINAL {
+    NORTH,
+    WEST,
+    EAST,
+    SOUTH
+  }
+
+  public void turnCameraTo(CARDINAL cardinal) {
     if (!isCameraRotating) {
       switch (cardinal) {
       case EAST:
@@ -99,21 +111,21 @@ public class CameraUtils {
       }
     }
 
-   }
-   
-   public void onEnd() {
-      setCameraPitching(false);
-      setCameraRotating(false);
-      setCameraMovement(false);
+  }
 
-      while (getRotationThread().isAlive() || getPitchThread().isAlive()) {
-         getRotationThread().interrupt();
-         getPitchThread().interrupt();
-         try {
-            Thread.sleep(250);
-         } catch (InterruptedException e) {
-         }
+  public void onEnd() {
+    setCameraPitching(false);
+    setCameraRotating(false);
+    setCameraMovement(false);
+
+    while (getRotationThread().isAlive() || getPitchThread().isAlive()) {
+      getRotationThread().interrupt();
+      getPitchThread().interrupt();
+      try {
+        Thread.sleep(250);
+      } catch (InterruptedException e) {
       }
-   }
+    }
+  }
 
 }

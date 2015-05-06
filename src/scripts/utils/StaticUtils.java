@@ -7,6 +7,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.imageio.ImageIO;
 
+import org.tribot.api.General;
+
 public final class StaticUtils {
 
    private StaticUtils() {};
@@ -15,6 +17,12 @@ public final class StaticUtils {
       return ImageIO.read(new URL(url));
    }
 
+  public static void sleep(int min, int max) {
+    try {
+      Thread.sleep(General.random(min, max));
+    } catch (InterruptedException e) {}
+  }
+   
    /**
     * Convert a millisecond duration to a string format
     * 
