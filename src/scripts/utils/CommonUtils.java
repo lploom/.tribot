@@ -82,37 +82,6 @@ public class CommonUtils {
       return ChooseOption.select(upText);
     }
   }
-  public boolean rightClickOnModel(RSModel model, String upText) {
-    if(model == null)
-      return false;
-
-    Point p = model.getCentrePoint();
-    p.setLocation(p.x + General.random(-5, 5), p.y + General.random(-5, 5));
-    Mouse.move(p);
-    Mouse.click(3);
-    long t = System.currentTimeMillis();
-    while(!ChooseOption.isOpen()) {
-      sleep(100, 250);
-      if(Timing.timeFromMark(t) >= General.random(1000, 2000)) {
-        break;
-      }
-    }
-    return ChooseOption.select(upText);
-  }
-  public boolean rightClickOnModelExact(RSModel model, String upText) {
-    if(model == null)
-      return false;
-
-    Mouse.hop(model.getCentrePoint());
-    Mouse.click(3);
-    long t = System.currentTimeMillis();
-    while(!ChooseOption.isOpen()) {
-      sleep(100, 250);
-      if(Timing.timeFromMark(t) >= General.random(5000, 7000))
-        break;
-    }
-    return ChooseOption.select(upText);
-  }
   public boolean sleepwalkTo(final Positionable toTile) {
     RSTile dest = Game.getDestination();
     if(dest != null) {

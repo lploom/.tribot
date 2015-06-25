@@ -735,7 +735,7 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, Mes
         camera.pitchCameraAsync(General.random(45, 75));
         Camera.turnToTile(gate[0].getPosition());
       } else {
-        if (commons.rightClickOnModel(gate[0].getModel(), "Pay-toll(10gp)")) {
+        if (DynamicClicking.clickRSObject(gate[0], "Pay-toll(10gp)")) {
           commons.waitUntilIdle(1000, 1500);
         }
       }
