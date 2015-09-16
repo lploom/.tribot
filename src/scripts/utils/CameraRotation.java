@@ -17,39 +17,40 @@ public class CameraRotation extends Thread {
       utils = cameraUtils;
    }
 
-   @Override
-   public void run() {
-      while (true) {
-         synchronized (this) {
-            try {
-               utils.setCameraRotating(false);
-               wait();
-            } catch (InterruptedException e) {
-               break;
-            }
-
-            switch (state) {
-               case TILE:
-                  utils.setCameraRotating(true);
-                  Camera.turnToTile(tileRotation);
-                  break;
-               case DEGREES:
-                  utils.setCameraRotating(true);
-                  int temp = 0;
-                  while (utils.isCameraMovement()) {
-                     if (temp > 50)
+    @Override
+    public void run() {
+        while (true) {
+            synchronized (this) {
+                try {
+                    wait();
+                } catch (InterruptedException e) {
+                    break;
+                }
+                utils.setCameraRotating(true);
+                switch (state) {
+                    case TILE:
+                        Camera.turnToTile(tileRotation);
                         break;
-                     temp++;
-                     rotateCameraBasedOnMovement();
-                  }
-                  if (!utils.isCameraMovement())
-                     Camera.setCameraRotation(degrees);
-                  break;
-            }
+                    case DEGREES:
+                        int temp = 0;
+                        if (!utils.isCameraMovement())
+                            Camera.setCameraRotation(degrees);
 
-         }
-      }
-   }
+                        while (utils.isCameraMovement()) {
+                            if (temp > 50)
+                                break;
+                            temp++;
+                            rotateCameraBasedOnMovement();
+                        }
+
+                        break;
+                }
+
+                utils.setCameraRotating(false);
+
+            }
+        }
+    }
 
    public void rotateCameraBasedOnMovement() {
       int deg = getMovementDirection();
@@ -96,7 +97,7 @@ public class CameraRotation extends Thread {
    private int getMovementDirection() {
       RSTile p1 = Player.getPosition();
       try {
-         Thread.sleep(General.random(350, 2000));
+         Thread.sleep(General.random(500, 2000));
       } catch (InterruptedException e) {
       }
       RSTile p2 = Player.getPosition();

@@ -347,7 +347,7 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, Mes
             sleep(500, 750);
         } else if (!loot.isOnScreen()) {
             camera.pitchCameraAsync(General.random(33, 45));
-            Camera.turnToTile(lootTile);
+            camera.rotateCameraToTileAsync(lootTile);
         } else {
             RSItemDefinition itemDefinition = loot.getDefinition();
             if (itemDefinition == null)
@@ -460,7 +460,7 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, Mes
                     } else { // Target is still legit but character got stuck
                         if (System.currentTimeMillis() - timer > General.random(2612, 2919)) {
                             if (!target.isOnScreen()) {
-                                Camera.turnToTile(target.getPosition());
+                                camera.rotateCameraToTileAsync(target.getPosition());
                             }
                             if (Player.getPosition().distanceTo(target) > 7) {
                                 abcToggleRunOn();
@@ -550,7 +550,7 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, Mes
         if (ladder != null && ladder.length > 0) {
             if (!ladder[0].isOnScreen()) {
                 camera.pitchCameraAsync(General.random(45, 100));
-                Camera.turnToTile(ladder[0].getPosition());
+                camera.rotateCameraToTileAsync(ladder[0].getPosition());
             }
             if (DynamicClicking.clickRSObject(ladder[0], "Climb-up")) {
                 commons.waitUntilIdle(1000, 1500);
@@ -773,7 +773,7 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, Mes
                         if (Player.getPosition().distanceTo(bankChest[0]) < 7) {
                             if (!bankChest[0].isOnScreen()) {
                                 camera.pitchCameraAsync(General.random(45, 110));
-                                Camera.turnToTile(bankChest[0].getPosition());
+                                camera.rotateCameraToTileAsync(bankChest[0].getPosition());
                             } else {
                                 if (DynamicClicking.clickRSObject(bankChest[0], "Bank Chest")) {
                                     sleep(1246, 1542);
@@ -783,7 +783,7 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, Mes
                             abcToggleRunOn();
                             if (Walking.walkPath(Walking.generateStraightPath(bankChest[0]))) {
                                 camera.pitchCameraAsync(General.random(45, 110));
-                                Camera.turnToTile(bankChest[0].getPosition());
+                                camera.rotateCameraToTileAsync(bankChest[0].getPosition());
                                 commons.waitUntilIdle(400, 800);
                             }
                         }
@@ -805,15 +805,16 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, Mes
             sleep(125, 150);
             if (bankLocation == -1 || bankLocation == 0 || bankLocation == 1 || (bankLocation == 2 && !inAlKharid())) {
                 // failsafe if north of the gate
-                if (gateTileOutside.getY() + 3 > Player.getPosition().getY()) {
+                if (botIsLost()) {
+                    println("Bot is derailed. Attempting to get back on path to cows!");
                     abcToggleRunOn();
-                    if (Walking.walkPath(pathToCows)) {
+                    if (Walking.walkPath(Walking.generateStraightPath(gateTileOutside))) {
                         camera.setCameraMovement(false);
-                        commons.waitUntilIdle(750, 1000);
+                        commons.waitForDestination();
                     }
                 } else {
                     abcToggleRunOn();
-                    if (Walking.walkPath(Walking.generateStraightPath(gateTileOutside))) {
+                    if (Walking.walkPath(pathToCows)) {
                         camera.setCameraMovement(false);
                         commons.waitForDestination();
                     }
@@ -833,6 +834,33 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, Mes
                 killingCows();
             }
         }
+    }
+
+    private boolean botIsLost() {
+        RSTile position = Player.getPosition();
+        if (position.distanceTo(GROUND_FLOOR_TILE) < 10) {
+            return false;
+        }
+
+        if (position.distanceTo(gateTileOutside) < 10) {
+            return false;
+        }
+
+        RSTile closest = null;
+        for (RSTile tile : pathToCows) {
+            if (closest == null) {
+                closest = tile;
+            }
+            if (tile.distanceTo(position) < closest.distanceTo(position)) {
+                closest = tile;
+            }
+        }
+
+        if (closest != null && closest.distanceTo(position) > 11) {
+            return true;
+        }
+
+        return false;
     }
 
     public RSTile[] reverse(RSTile[] tiles) {
@@ -906,7 +934,7 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, Mes
         if (gate != null && gate.length > 0) {
             if (!gate[0].isOnScreen()) {
                 camera.pitchCameraAsync(General.random(45, 75));
-                Camera.turnToTile(gate[0].getPosition());
+                camera.rotateCameraToTileAsync(gate[0].getPosition());
             } else {
                 if (DynamicClicking.clickRSObject(gate[0], "Pay-toll(10gp)")) {
                     commons.waitUntilIdle(1000, 1500);
@@ -924,7 +952,7 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, Mes
                 uptext = "Climb-up";
                 camera.pitchCameraAsync(General.random(22, 45));
                 stairTile = STAIRS_TILE_0;
-                Camera.turnToTile(stairTile);
+                camera.rotateCameraToTileAsync(stairTile);
                 break;
             case 1:
                 stairTile = STAIRS_TILE_1;
@@ -951,7 +979,7 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, Mes
         RSObject stairs = getStair(stairTile);
         if (stairs != null) {
             if (!stairs.isOnScreen()) {
-                Camera.turnToTile(stairsTile);
+                camera.rotateCameraToTileAsync(stairsTile);
                 sleep(100, 200);
             }
             if (DynamicClicking.clickRSObject(stairs, uptext + " Staircase")) {
@@ -969,7 +997,7 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, Mes
         if (trapdoor != null && trapdoor.length > 0) {
             camera.pitchCameraAsync(General.random(60, 100));
             if (!trapdoor[0].isOnScreen()) {
-                Camera.turnToTile(stairsTile);
+                camera.rotateCameraToTileAsync(stairsTile);
                 sleep(100, 200);
             }
             if (DynamicClicking.clickRSObject(trapdoor[0], "Climb-down Trapdoor")) {
@@ -1190,9 +1218,9 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, Mes
         g.drawString("Hides per Hour: " + hidesPerHour, 370, 305);
         g.drawString("Exp gained: " + expGained, 370, 320);
         g.drawString("Exp per Hour: " + ">" + expPerHour + "k", 370, 335);
-        g.drawString("Dist to stairs: " + distToStairs, 370, 365);
-        g.drawString("Camera rotation: " + camera.isCameraMovement(), 370, 20);
-        // g.drawString("Camera angle: " + Camera.getCameraAngle(), 370, 35);
+        g.drawString("Camera rotation: " + camera.isCameraRotating(), 370, 20);
+        g.drawString("Camera angle: " + camera.isCameraPitching(), 370, 35);
+        g.drawString("Camera movement " + camera.isCameraMovement(), 370, 50);
     }
 
     @Override
@@ -1323,7 +1351,7 @@ public class CowHideKiller extends Script implements Painting, RandomEvents, Mes
 
         gui.dispose();
 
-        Mouse.setSpeed(250);
+        Mouse.setSpeed(150);
         expStart = getTotalCombatExp();
         Walking.setWalkingTimeout(7500L);
         saveInitialEquipment();
