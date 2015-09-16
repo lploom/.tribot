@@ -202,7 +202,7 @@ public class KMUtils {
 
     return false;
   }
-
+  
   public boolean isAutoRetaliateIsEnabled() {
     return Game.getSetting(172) == 0;
   }

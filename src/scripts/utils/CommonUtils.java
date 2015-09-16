@@ -1,32 +1,20 @@
 package scripts.utils;
 
-import java.awt.Color;
-import java.awt.Point;
-
 import org.tribot.api.General;
 import org.tribot.api.Timing;
 import org.tribot.api.input.Mouse;
 import org.tribot.api.interfaces.Positionable;
-import org.tribot.api2007.ChooseOption;
 import org.tribot.api2007.Game;
 import org.tribot.api2007.GameTab;
+import org.tribot.api2007.GameTab.TABS;
 import org.tribot.api2007.Inventory;
 import org.tribot.api2007.Player;
-import org.tribot.api2007.Screen;
 import org.tribot.api2007.Walking;
-import org.tribot.api2007.GameTab.TABS;
 import org.tribot.api2007.types.RSGroundItem;
 import org.tribot.api2007.types.RSItem;
-import org.tribot.api2007.types.RSModel;
 import org.tribot.api2007.types.RSTile;
 
 public class CommonUtils {
-
-  private CameraUtils cam;
-
-  public CommonUtils(CameraUtils cameraUtils) {
-    cam = cameraUtils;
-  }
 
   // -- temp methods
   public boolean isAutoRetaliateIsEnabled() {
@@ -44,44 +32,6 @@ public class CommonUtils {
   }
   // -- end temp methods
 
-  public boolean clickModel(RSModel model, String upText) {
-    if(model == null)
-      return false;
-
-    if(upText.contains("->"))
-      model.click();
-
-    Point p = model.getCentrePoint();
-    p.setLocation(p.x + General.random(-7, 7), p.y + General.random(-7, 7));
-    Mouse.hop(p);
-    if(!cam.isCameraPitching() && !cam.isCameraRotating() && Timing.waitUptext(upText, General.random(350, 400))) {
-      Mouse.click(1);
-      long failsafe = System.currentTimeMillis();
-
-      while(System.currentTimeMillis() - failsafe < 1000) {
-        Color color = Screen.getColorAt(Mouse.getPos());
-        // check if click was RED
-        if(color.getRed() > 240 && color.getGreen() < 10 && color.getBlue() < 10) {
-          return true;
-        }
-        // check if click was YELLOW
-        else if(color.getRed() > 245 && color.getGreen() > 245 && color.getBlue() < 10) {
-          return false;
-        }
-        sleep(10, 20);
-      }
-      return false;
-    } else {
-      Mouse.click(3);
-      long t = System.currentTimeMillis();
-      while(!ChooseOption.isOpen()) {
-        sleep(100, 250);
-        if(Timing.timeFromMark(t) >= General.random(500, 1000))
-          break;
-      }
-      return ChooseOption.select(upText);
-    }
-  }
   public boolean sleepwalkTo(final Positionable toTile) {
     RSTile dest = Game.getDestination();
     if(dest != null) {
